@@ -4,8 +4,8 @@ A CLI that manages a SignPath.io organization as code: projects, signing policie
 artifact configurations, CI users and pipeline policies are declared in YAML and
 reconciled against the SignPath REST API.
 
-- **This repo** holds the tool only.
-- **The Eclipse Foundation configuration** (org ID, profiles, project files, XML
+* **This repo** holds the tool only.
+* **The Eclipse Foundation configuration** (org ID, profiles, project files, XML
   library) lives in a separate repo. The two are never mixed. Examples in this
   repo are generic.
 
@@ -20,36 +20,36 @@ without a profile followed by a `plan` showing no change, and
 
 Changes made to the plan during implementation:
 
-- **API models are hand-written and lenient** rather than generated, because real
+* **API models are hand-written and lenient** rather than generated, because real
   responses deviate from the spec
   ([ADR-0010](docs/decisions/0010-hand-write-lenient-api-models.md)).
-- **XML is compared as text,** not canonicalized, because SignPath stores it
+* **XML is compared as text,** not canonicalized, because SignPath stores it
   verbatim. The one transformation SignPath applies (prepending an XML
   declaration when there is none) is mirrored.
-- **Preconditions are verified once, right before the first write,** rather than
+* **Preconditions are verified once, right before the first write,** rather than
   before each write. Otherwise the tool's own earlier writes would trip them.
   A stale project is skipped while the others are applied.
-- **`ci:<name>` submitter references must be resolvable offline:** the CI user is
+* **`ci:<name>` submitter references must be resolvable offline:** the CI user is
   declared by another project or listed in `unmanaged.ci_users`. This is so
   `--prune` can never deactivate a CI user that a policy still uses.
-- **Pipeline policies require trusted build system verification,** because the API
+* **Pipeline policies require trusted build system verification,** because the API
   nests them inside that setting.
-- **`null` removes an inherited value at any depth;** the pre-merge structural
+* **`null` removes an inherited value at any depth;** the pre-merge structural
   check ignores nulls.
 
 Not yet done:
 
-- End-to-end tests against a dedicated sandbox in CI. They need their own CI
+* End-to-end tests against a dedicated sandbox in CI. They need their own CI
   secret; the developer's sandbox token must never be used in tests.
-- A first release (PyPI trusted publishing and the GHCR image must be set up).
-- Confirming that a Global Reader token is enough for `plan`.
+* A first release (PyPI trusted publishing and the GHCR image must be set up).
+* Confirming that a Global Reader token is enough for `plan`.
 
 ## 1. Decisions made
 
 Each structural decision has an ADR in [docs/decisions](docs/decisions/README.md).
 
 | Topic | Decision |
-|---|---|
+| --- | --- |
 | Language | Python (same stack as otterdog) |
 | Config format | YAML. One config root = one SignPath organization. One file per project. |
 | Organization ID | Declared once in `organization.yaml`. Never in project files. |
@@ -113,7 +113,7 @@ From `https://app.signpath.io/Api/swagger/v1/swagger.json` (OpenAPI 3.0.4) and d
 
 ## 3. Configuration repository layout (consumer side)
 
-```
+```text
 <config-root>/
 ├── organization.yaml                 # org ID, default profile, pipeline policies, unmanaged lists
 ├── profiles/
@@ -237,39 +237,39 @@ signing_policies:
 
 ### 3.5 Semantics
 
-- **Project slug is the file name.** It is checked against the slug charset and for
+* **Project slug is the file name.** It is checked against the slug charset and for
   case-insensitive uniqueness.
-- **Merging a profile into a project:**
-  - Maps are deep-merged by key.
-  - Scalars and lists are replaced, never concatenated.
-  - `~` removes an inherited map entry.
-  - An artifact config's source keys (`shared`, `file`, `xml`) replace each other as
+* **Merging a profile into a project:**
+  * Maps are deep-merged by key.
+  * Scalars and lists are replaced, never concatenated.
+  * `~` removes an inherited map entry.
+  * An artifact config's source keys (`shared`, `file`, `xml`) replace each other as
     a group. Exactly one must be set after the merge.
-- **Principal references:**
-  - A bare email is an interactive user, matched on `accountEmailAddress`,
+* **Principal references:**
+  * A bare email is an interactive user, matched on `accountEmailAddress`,
     case-insensitive (to verify).
-  - `group:<name>` is a user group, matched on name.
-  - A project's own CI users attach themselves to policies through
+  * `group:<name>` is a user group, matched on name.
+  * A project's own CI users attach themselves to policies through
     `ci_users.<name>.signing_policies`. `ci:<name>` in `submitters` references a CI
     user the project does not own: one owned by another project, or one listed in
     `unmanaged.ci_users`. It produces a warning, and it lets `import` represent
     shared CI users faithfully
     ([ADR-0007](docs/decisions/0007-declare-ci-users-explicitly-in-their-owning-project.md)).
-- **Computing submitters:** a policy's submitters are the CI users that list it,
+* **Computing submitters:** a policy's submitters are the CI users that list it,
   plus any explicit `submitters:` (humans or groups). Validation rejects humans as
   submitters when trusted build system verification is on.
-- **Artifact config XML is not templated by the tool.** SignPath's own
+* **Artifact config XML is not templated by the tool.** SignPath's own
   `<parameters>` and `${name}` substitution already cover per-project variation.
   Editing a shared XML file updates every project that uses it, and `plan` shows
   every affected project.
-- **Every object has `active: true` by default.** `active: false` keeps an object
+* **Every object has `active: true` by default.** `active: false` keeps an object
   declared but deactivated.
-- **Editor support:** a JSON Schema is exported (`signpath-manager schema`) for
+* **Editor support:** a JSON Schema is exported (`signpath-manager schema`) for
   yaml-language-server.
 
 ## 4. CLI
 
-```
+```text
 signpath-manager [global options] <command>
 
 Global:
@@ -295,15 +295,16 @@ Commands:
 **What each run targets:**
 
 | Run | Org-level objects (pipeline policies, pruning of undeclared projects and CI users) | Projects |
-|---|---|---|
+| --- | --- | --- |
 | no scope flag | yes | all |
 | `--project X` (repeatable) | no | only X: its artifact configs, trusted build system links, CI users and signing policies. Referenced pipeline policies must already exist live, otherwise it fails with "run a full apply / `--org-only` first". |
 | `--org-only` | yes | none |
 
 **Preflight on every online command:**
-- `GET Users/Me`: show the identity and role, and fail early if the role is too low
+
+* `GET Users/Me`: show the identity and role, and fail early if the role is too low
   for the command.
-- `GET Organization`: show the org name and subscription so the operator sees which
+* `GET Organization`: show the org name and subscription so the operator sees which
   org is targeted, and check that creations won't exceed `maxNumberOfActiveProjects`.
 
 ## 5. Reconciliation engine
@@ -311,30 +312,30 @@ Commands:
 `load config` → `resolve` → `fetch live` → `diff` → `plan` → `render` / `execute`
 
 1. **Load and resolve (offline).**
-   - Parse YAML with ruamel so errors carry `file:line`.
-   - Merge profiles.
-   - Load XML and validate it against the vendored `artifact-configuration/v1.xsd`.
-   - Check internal references: policy names in `ci_users`, pipeline-policy slugs,
+   * Parse YAML with ruamel so errors carry `file:line`.
+   * Merge profiles.
+   * Load XML and validate it against the vendored `artifact-configuration/v1.xsd`.
+   * Check internal references: policy names in `ci_users`, pipeline-policy slugs,
      library names.
-   - Produce a fully explicit `DesiredState`.
+   * Produce a fully explicit `DesiredState`.
 2. **Fetch live state, scoped and concurrent (httpx async, bounded semaphore, retries
    with backoff on 429 and 5xx).**
-   - Org-wide lists, fetched once: Projects, CIUsers, InteractiveUsers, UserGroups,
+   * Org-wide lists, fetched once: Projects, CIUsers, InteractiveUsers, UserGroups,
      Certificates, TrustedBuildSystems, PipelinePolicies.
-   - For each in-scope project: the project, each signing policy (with
+   * For each in-scope project: the project, each signing policy (with
      `includePipelinePolicyContent`), and each artifact config's XML.
 3. **Resolve references against live state.**
-   - Emails and group names become UUIDs.
-   - Certificate slugs must exist, be active, and have a purpose matching the
+   * Emails and group names become UUIDs.
+   * Certificate slugs must exist, be active, and have a purpose matching the
      policy's purpose.
-   - Trusted build system slugs must exist and be active.
-   - Any failure is a plan error, not a runtime error.
+   * Trusted build system slugs must exist and be active.
+   * Any failure is a plan error, not a runtime error.
 4. **Diff** into typed actions: `Create`, `Update(field diffs)`, `Activate`,
    `Deactivate`, `Link`, `UnfixableDrift`.
-   - Lists of principals and repository URLs are compared as sets.
-   - XML is compared as text: only a leading BOM, line endings and trailing
+   * Lists of principals and repository URLs are compared as sets.
+   * XML is compared as text: only a leading BOM, line endings and trailing
      whitespace are normalized, because SignPath stores it verbatim.
-   - Pipeline-policy definitions are compared as parsed YAML.
+   * Pipeline-policy definitions are compared as parsed YAML.
 5. **Execution order.** Within a project, actions run sequentially; across projects,
    `--parallelism` applies (default 1).
    1. Pipeline policies: create, edit, activate. Org scope only.
@@ -354,72 +355,72 @@ Commands:
          Never the default artifact config.
    3. Org-level prune (full run with `--prune`): deactivate undeclared projects, CI
       users and pipeline policies.
-      - Lists under `unmanaged` are skipped, and so is the authenticated user.
-      - The run aborts if more than `--max-deactivations` (default 10) objects would
+      * Lists under `unmanaged` are skipped, and so is the authenticated user.
+      * The run aborts if more than `--max-deactivations` (default 10) objects would
         be deactivated.
 6. **Failure handling.** A failure stops that project and the run continues with
    the others, then exits non-zero. Runs converge, so re-running is the recovery.
 7. **Output.**
-   - `plan` gives a readable diff (rich) or JSON.
-   - `--detailed-exitcode`: 0 no changes, 2 changes, 1 error.
-   - `apply` shows the plan and asks for confirmation; on a non-TTY it requires
+   * `plan` gives a readable diff (rich) or JSON.
+   * `--detailed-exitcode`: 0 no changes, 2 changes, 1 error.
+   * `apply` shows the plan and asks for confirmation; on a non-TTY it requires
      `--yes`.
 
 ## 6. CI user tokens
 
-- **Interface:** `TokenSink.deliver(ci_user, project, token)`.
-- **v1 sinks:**
-  - **TTY sink (default when interactive):** writes to `/dev/tty`, not stdout, so the
+* **Interface:** `TokenSink.deliver(ci_user, project, token)`.
+* **v1 sinks:**
+  * **TTY sink (default when interactive):** writes to `/dev/tty`, not stdout, so the
     token never ends up in logs or pipes. It waits for acknowledgement before
     continuing.
-  - **File sink (`--ci-token-file`):** appends JSON lines
+  * **File sink (`--ci-token-file`):** appends JSON lines
     `{ci_user, project, token, created_at}` to a file created with mode 0600.
-- **Non-interactive run without a sink:** creating a CI user fails unless
+* **Non-interactive run without a sink:** creating a CI user fails unless
   `--discard-new-ci-tokens` is passed. In that case an operator later runs
   `ci-user rotate-token NAME` to get a usable token.
-- **Tokens never appear in** objects, reprs, exceptions or debug logs (pydantic
+* **Tokens never appear in** objects, reprs, exceptions or debug logs (pydantic
   `SecretStr` plus httpx hook redaction).
-- **Later sinks, not v1:** Vault / pass, GitHub Actions secret.
+* **Later sinks, not v1:** Vault / pass, GitHub Actions secret.
 
 ## 7. Import
 
 `import -o DIR` reads the live org and writes a config root.
 
-- `organization.yaml`: the org ID, plus pipeline policies (internal definitions
+* `organization.yaml`: the org ID, plus pipeline policies (internal definitions
   inline, or in `pipeline-policies/` when large).
-- **One `projects/<slug>.yaml` per project.**
-  - With `--profile` (or an existing profile in `DIR`), only the fields that differ
+* **One `projects/<slug>.yaml` per project.**
+  * With `--profile` (or an existing profile in `DIR`), only the fields that differ
     from the profile are written, which gives minimal files. Intended workflow: import
     once raw, write the profile by hand from what's common, then import again to get
     minimal files.
-- **XML deduplication.** Artifact config XML that is identical after normalization
+* **XML deduplication.** Artifact config XML that is identical after normalization
   in two or more projects goes to `artifact-configurations/imported-<hash8>.xml`
   (operators rename these later). XML used by a single project goes to
   `artifact-configurations/custom/<project>.<config>.xml`.
-- **CI users** are assigned to the project whose policies they submit to. A CI user
+* **CI users** are assigned to the project whose policies they submit to. A CI user
   that submits to several projects breaks the one-owner rule. It is written to an
   `import-report.md` for manual resolution and left out of every project file.
-- **Principals** become `email` and `group:name` references.
-- **Inactive objects** come out as `active: false`. Things the config can't express
+* **Principals** become `email` and `group:name` references.
+* **Inactive objects** come out as `active: false`. Things the config can't express
   go to the report.
-- **Acceptance criterion:** running `import` and then `plan` shows **no changes**.
+* **Acceptance criterion:** running `import` and then `plan` shows **no changes**.
   This is the round-trip test for the whole model.
 
 ## 8. Tech stack and layout of this repo
 
-- Python ≥ 3.12, `uv`, src layout, entry point `signpath-manager`.
-- Runtime: `click`, `httpx`, `pydantic` v2, `ruamel.yaml`, `lxml`, `rich`.
-- Dev: `pytest`, `respx`, `ruff`, `mypy`, `datamodel-code-generator`, `pre-commit`.
-- **Vendored:** `resources/signpath-openapi.json` and `artifact-configuration-v1.xsd`.
-  - API models are hand-written and lenient rather than generated, because real
+* Python ≥ 3.12, `uv`, src layout, entry point `signpath-manager`.
+* Runtime: `click`, `httpx`, `pydantic` v2, `ruamel.yaml`, `lxml`, `rich`.
+* Dev: `pytest`, `respx`, `ruff`, `mypy`, `datamodel-code-generator`, `pre-commit`.
+* **Vendored:** `resources/signpath-openapi.json` and `artifact-configuration-v1.xsd`.
+  * API models are hand-written and lenient rather than generated, because real
     responses deviate from the spec (numeric `status` values,
     [ADR-0010](docs/decisions/0010-hand-write-lenient-api-models.md)). Client
     methods cover the ~40 endpoints used.
-  - `scripts/update-spec.sh` refreshes both files, and a scheduled CI job flags
+  * `scripts/update-spec.sh` refreshes both files, and a scheduled CI job flags
     upstream spec changes.
-- Distribution: PyPI and a container image (`ghcr.io/eclipse-csi/signpath-manager`).
+* Distribution: PyPI and a container image (`ghcr.io/eclipse-csi/signpath-manager`).
 
-```
+```text
 src/signpath_manager/
   cli.py
   auth.py            # admin token resolution, SecretStr
@@ -438,15 +439,15 @@ docs/
 
 ## 9. Testing
 
-- **Unit:** profile merging, validation errors with `file:line`, reference
+* **Unit:** profile merging, validation errors with `file:line`, reference
   resolution, diff engine. Table-driven, live vs desired.
-- **API client:** `respx` fixtures recorded from a sandbox org.
-- **Golden files:** plan output, text and JSON.
-- **End-to-end** against a dedicated sandbox SignPath org (secret-gated workflow):
-  - create a project from config, `apply`, then `plan` shows no changes (convergence);
-  - `apply` twice: the second run is a no-op (idempotency);
-  - `import` then `plan` shows no changes (round-trip);
-  - `--prune` with a mass-deactivation guard.
+* **API client:** `respx` fixtures recorded from a sandbox org.
+* **Golden files:** plan output, text and JSON.
+* **End-to-end** against a dedicated sandbox SignPath org (secret-gated workflow):
+  * create a project from config, `apply`, then `plan` shows no changes (convergence);
+  * `apply` twice: the second run is a no-op (idempotency);
+  * `import` then `plan` shows no changes (round-trip);
+  * `--prune` with a mass-deactivation guard.
 
 ## 10. Milestones
 
@@ -474,7 +475,7 @@ writing anything to it.
 Probe objects in the sandbox are prefixed `spm-probe-`.
 
 | Question | Answer |
-|---|---|
+| --- | --- |
 | `POST CIUsers` response | `201`, body `{"userId", "apiToken"}`, `Location` header. |
 | Initial artifact config of a new project | Slug `initial`, name "Initial version", default. |
 | Is XML normalized? | No. Stored and returned byte for byte (comments and whitespace kept), so the diff compares text ([ADR-0004](docs/decisions/0004-share-artifact-configuration-xml-through-a-library-and-compare-it-verbatim.md)). |
@@ -512,23 +513,23 @@ Still open:
 The tool is a good API citizen even though SignPath supports no HTTP validators today
 ([ADR-0011](docs/decisions/0011-use-conditional-requests-and-emulate-write-preconditions.md)):
 
-- **GET:** the client keeps `ETag` and `Last-Modified` per URL and sends
+* **GET:** the client keeps `ETag` and `Last-Modified` per URL and sends
   `If-None-Match` / `If-Modified-Since`, serving the cached body on `304`. This is
   inert today and starts working when SignPath emits validators.
-- **Writes:** the client re-reads the resource right before writing and compares a
+* **Writes:** the client re-reads the resource right before writing and compares a
   fingerprint with the state the plan was computed from. On mismatch the action
   fails as a stale plan. A known `ETag` is also sent as `If-Match`.
-- **Traffic:** only differing fields trigger writes. Concurrency is bounded,
+* **Traffic:** only differing fields trigger writes. Concurrency is bounded,
   `Retry-After` is honored on `429` and `503` with exponential backoff, connections
   are reused, and a `User-Agent` names the tool.
 
 ## 12. Out of scope for v1
 
-- Certificates.
-- Creating or editing interactive users and groups, global roles, directory sync.
-- Trusted build system lifecycle.
-- Webhooks and notification settings (not in the API).
-- Audit-log consumption.
-- Vault and GitHub token sinks.
-- Pulling metadata from Eclipse PMI. That would be EF-specific; it could be a
+* Certificates.
+* Creating or editing interactive users and groups, global roles, directory sync.
+* Trusted build system lifecycle.
+* Webhooks and notification settings (not in the API).
+* Audit-log consumption.
+* Vault and GitHub token sinks.
+* Pulling metadata from Eclipse PMI. That would be EF-specific; it could be a
   separate generator that writes project files, keeping this tool generic.

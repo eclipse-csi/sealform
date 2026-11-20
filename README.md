@@ -51,7 +51,7 @@ for a complete configuration root.
 ## Commands
 
 | Command | What it does |
-|---|---|
+| --- | --- |
 | `validate` | Checks the configuration offline: schema, profile merge, references, XML against the SignPath XSD. |
 | `plan` | Shows what `apply` would change. Read-only: it is designed for a Global Reader token (not yet verified). `-o json` and `--detailed-exitcode` are available for CI. |
 | `apply` | Applies the plan after confirmation (`--yes` when not interactive). |
@@ -62,7 +62,7 @@ for a complete configuration root.
 Scoping options for `plan` and `apply`:
 
 | Option | Effect |
-|---|---|
+| --- | --- |
 | `-p/--project SLUG` | Only these projects (repeatable). |
 | `--org-only` | Only organization-level objects (pipeline policies, pruning). |
 | `--prune` | Deactivate what is not declared, refused above `--max-deactivations` (default 10). |

@@ -2,7 +2,7 @@
 
 A configuration root describes one SignPath organization:
 
-```
+```text
 <root>/
 ├── organization.yaml          # organization ID, default profile, pipeline policies, unmanaged objects
 ├── profiles/<name>.yaml       # shared project defaults
@@ -111,7 +111,7 @@ signing_policies:
 ### Principals
 
 | Reference | Meaning |
-|---|---|
+| --- | --- |
 | `alice@example.org` | Interactive user, matched by account email, then the email of the login identity, then the notification email. The user must already exist. |
 | `group:<name>` | User group, matched by name. |
 | `ci:<name>` | Only in `submitters`: a CI user this project does not own. It must be declared by another project (a warning is shown) or listed in `unmanaged.ci_users`. |

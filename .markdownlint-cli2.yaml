@@ -1,0 +1,11 @@
+# markdownlint-cli2 configuration: https://github.com/DavidAnson/markdownlint-cli2
+# Rules follow the madr-adr skill's markdownlint.yml (from MADR itself).
+config:
+  default: true
+  # One sentence per line; sentences with links often exceed 80 characters.
+  MD013: false
+  # MADR repeats headings such as the chosen option's title and "Examples".
+  MD024: false
+  # MADR uses asterisks as list markers (MADR ADR-0011).
+  MD004:
+    style: asterisk

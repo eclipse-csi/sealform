@@ -1,0 +1,144 @@
+#:schema https://www.schemastore.org/prek.json
+#
+# Repository checks, run by prek (https://prek.j178.dev).
+#
+#   apm install --frozen  # deploys the skills whose scripts some hooks run (.agents/skills/)
+#   prek install          # installs the pre-commit, commit-msg and pre-push shims
+#   prek run --all-files  # runs the pre-commit stage on the whole tree
+#
+# The same hooks run in CI (.github/workflows/prek.yml), so skipping `prek install`
+# only delays the feedback. See docs/decisions/0001-enforce-repository-checks-with-prek-locally-and-in-ci.md.
+#
+# Stages:
+#   pre-commit  fast, file-scoped fixers and linters on staged files
+#   commit-msg  Conventional Commits check of the message being written
+#   pre-push    secret scan of the commits being pushed
+#
+# Priorities: hooks with the same priority run concurrently; lower runs first.
+#   0 = fixers, 10 = linters, 20 = repository-level checks
+
+minimum_prek_version = "0.5.3"
+default_install_hook_types = ["pre-commit", "commit-msg", "pre-push"]
+# Hooks run at pre-commit unless they say otherwise. Some upstream manifests also
+# enable pre-push, so those hooks set `stages` explicitly below.
+default_stages = ["pre-commit"]
+fail_fast = false
+
+# APM's deployed files are git-ignored, so prek never sees them. Its lockfile is
+# tracked but generated (and hash-pinned), so fixers must leave it alone.
+exclude = { glob = [
+  "apm.lock.yaml",
+  # Verbatim MADR templates, kept as upstream ships them.
+  "docs/decisions/adr-template*.md",
+  # Byte-for-byte copies of SignPath's OpenAPI document and XSD; the spec-drift
+  # workflow (scripts/update-spec.sh --check) compares them with upstream.
+  "src/signpath_manager/resources/**",
+] }
+
+[update]
+# `prek update` pins full commit SHAs and ignores releases younger than 3 days,
+# the same cooldown as Renovate's minimumReleaseAge (renovate.json5).
+cooldown_days = 3
+freeze = true
+
+# --- pre-commit: fixers ------------------------------------------------------
+
+[[repos]]
+repo = "builtin"
+hooks = [
+  { id = "trailing-whitespace", args = ["--markdown-linebreak-ext=md"], stages = ["pre-commit"], priority = 0 },
+  { id = "end-of-file-fixer", stages = ["pre-commit"], priority = 0 },
+  { id = "mixed-line-ending", args = ["--fix=lf"], priority = 0 },
+  { id = "fix-byte-order-marker", priority = 0 },
+  # --- pre-commit: syntax and repository hygiene ---
+  { id = "check-yaml", args = ["--disallow-unknown-tags"], priority = 10 },
+  { id = "check-json", priority = 10 },
+  { id = "check-toml", priority = 10 },
+  { id = "check-merge-conflict", priority = 10 },
+  { id = "check-case-conflict", priority = 10 },
+  { id = "check-illegal-windows-names", priority = 10 },
+  { id = "check-added-large-files", stages = ["pre-commit"], priority = 10 },
+  { id = "forbid-new-submodules", priority = 10 },
+  { id = "check-symlinks", priority = 10 },
+  { id = "destroyed-symlinks", stages = ["pre-commit"], priority = 10 },
+  { id = "detect-private-key", priority = 10 },
+  { id = "check-vcs-permalinks", priority = 10 },
+  { id = "check-executables-have-shebangs", stages = ["pre-commit"], priority = 10 },
+  { id = "check-shebang-scripts-are-executable", stages = ["pre-commit"], priority = 10 },
+]
+
+# --- pre-commit: linters -----------------------------------------------------
+
+[[repos]]
+repo = "https://github.com/crate-ci/typos"
+rev = "00f422f3b19c57bc6338715ebfe3316d38768461"  # frozen: v1.50.3
+hooks = [{ id = "typos", stages = ["pre-commit"], priority = 10 }]
+
+[[repos]]
+repo = "https://github.com/DavidAnson/markdownlint-cli2"
+rev = "916ad0aaa108c64d294101002066f530ea170b10"  # frozen: v0.23.3
+hooks = [{ id = "markdownlint-cli2", priority = 10 }]
+
+[[repos]]
+repo = "https://github.com/adrienverge/yamllint"
+rev = "cba56bcde1fdd01c1deb3f945e69764c291a6530"  # frozen: v1.38.0
+hooks = [{ id = "yamllint", args = ["--strict"], priority = 10 }]
+
+[[repos]]
+repo = "https://github.com/editorconfig-checker/editorconfig-checker.python"
+rev = "e8b4e28241a9ae8296ba6e4a491b5da4eda73283"  # frozen: 3.11.1
+hooks = [{ id = "editorconfig-checker", priority = 10 }]
+
+# GitHub Actions workflows: correctness, schema and security.
+
+[[repos]]
+repo = "https://github.com/rhysd/actionlint"
+rev = "914e7df21a07ef503a81201c76d2b11c789d3fca"  # frozen: v1.7.12
+hooks = [{ id = "actionlint", priority = 10 }]
+
+[[repos]]
+repo = "https://github.com/zizmorcore/zizmor-pre-commit"
+rev = "fa412071e4f5d44d44f9e365f4676f9df92456a2"  # frozen: v1.30.1
+hooks = [{ id = "zizmor", priority = 10 }]
+
+[[repos]]
+repo = "https://github.com/python-jsonschema/check-jsonschema"
+rev = "0494aa7fa1314e98913a41227d8f0a515b2c1049"  # frozen: 0.38.2
+hooks = [
+  { id = "check-github-workflows", priority = 10 },
+  # renovate.json5 is JSON5, which needs a parser the hook doesn't ship.
+  { id = "check-renovate", additional_dependencies = ["json5==0.15.0"], priority = 10 },
+]
+
+# Secrets. `gitleaks` scans the staged changes; `gitleaks-push` scans the commits
+# being pushed (PRE_COMMIT_FROM_REF..PRE_COMMIT_TO_REF, set by prek on pre-push and
+# by `prek run --from-ref/--to-ref` in CI), falling back to the whole history.
+# Commits can bring in content that was never staged as such (amend, rebase,
+# cherry-pick), so the push-time scan is the one that guards what leaves the machine.
+
+[[repos]]
+repo = "https://github.com/gitleaks/gitleaks"
+rev = "83d9cd684c87d95d656c1458ef04895a7f1cbd8e"  # frozen: v8.30.1
+hooks = [
+  { id = "gitleaks", stages = ["pre-commit"], priority = 10 },
+  { id = "gitleaks", alias = "gitleaks-push", name = "gitleaks (commits being pushed)", entry = 'gitleaks git --redact --verbose --no-banner --log-opts="${PRE_COMMIT_FROM_REF:+$PRE_COMMIT_FROM_REF..}${PRE_COMMIT_TO_REF:-HEAD}"', shell = "bash", stages = ["pre-push", "manual"], always_run = true, pass_filenames = false },
+]
+
+# --- repository-level checks -------------------------------------------------
+
+[[repos]]
+repo = "local"
+hooks = [
+  # The ADR log (docs/decisions/), checked with the madr-adr skill's own scripts.
+  { id = "madr-validate", name = "validate MADR decision records", language = "python", entry = "python .agents/skills/madr-adr/scripts/validate_madr.py", files = '^docs/decisions/\d{4}-[^/]+\.md$', priority = 20 },
+  { id = "adr-index", name = "check the ADR index is up to date", language = "python", entry = "python .agents/skills/madr-adr/scripts/update_index.py --dir docs/decisions --check", files = "^docs/decisions/", pass_filenames = false, priority = 20 },
+  { id = "prek-validate-config", name = "validate prek config", language = "system", entry = "prek validate-config", files = '^prek\.toml$', priority = 20 },
+  # --- commit-msg ---
+  { id = "conventional-commit", name = "Conventional Commits message", language = "python", entry = "python .agents/skills/conventional-commits/scripts/validate_commit_msg.py --human", stages = ["commit-msg"] },
+]
+
+# check-hooks-apply is deliberately absent: several hooks above are preventive
+# (JSON, symlinks, submodules, executables) and are meant to match nothing today.
+[[repos]]
+repo = "meta"
+hooks = [{ id = "check-useless-excludes", priority = 20 }]

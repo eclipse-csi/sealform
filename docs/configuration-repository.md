@@ -6,7 +6,7 @@ A typical setup reviews changes in pull requests and applies them on merge.
 ## Tokens
 
 | Token | Role | Used by |
-|---|---|---|
+| --- | --- | --- |
 | Reader | CI user with the Global Reader role (not yet verified to read CI user details and user emails) | `plan` on pull requests (read-only) |
 | Administrator | CI user with the Global Administrator role, or Project Administrator plus User Administrator | `apply` on the default branch |
 
@@ -41,10 +41,10 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
       - run: uvx signpath-manager validate
       - run: uvx signpath-manager plan
         env:
@@ -56,10 +56,10 @@ jobs:
     environment: signpath-production
     concurrency: signpath-apply
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
       - run: uvx signpath-manager apply --yes --discard-new-ci-tokens
         env:
           SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_ADMIN_TOKEN }}
