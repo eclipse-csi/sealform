@@ -66,8 +66,14 @@ format-jinja = """
 """
 
 [tool.uv]
-# the version is dynamic: rebuild the editable install when commits or tags change
-cache-keys = [{ file = "pyproject.toml" }, { git = { commit = true, tags = true } }]
+# rebuild when the sources, the commit or the tags change (the version is derived from git, and
+# `uv tool run --from <checkout>` builds a regular wheel that must not go stale)
+cache-keys = [
+  { file = "pyproject.toml" },
+  { file = "src/**/*.py" },
+  { file = "src/**/resources/*" },
+  { git = { commit = true, tags = true } },
+]
 # pinned build backend (uv build / uv sync); refresh with:
 #   printf '%s\n' hatchling uv-dynamic-versioning | uv pip compile - --no-annotate --no-header
 build-constraint-dependencies = [
