@@ -1,4 +1,4 @@
-from signpath_manager.config.xml import normalize_xml_text, validate_xml, xml_equal
+from signpath_manager.config.xml import normalize_xml_text, stored_form, validate_xml, xml_equal
 
 from .conftest import JAR_XML
 
@@ -45,3 +45,12 @@ def test_normalization_only_touches_bom_newlines_and_trailing_whitespace() -> No
     assert xml_equal("<a>\n</a>\n", "<a>\r\n</a>")
     assert not xml_equal("<a> </a>", "<a></a>")
     assert not xml_equal("<a><!-- c --></a>", "<a></a>")
+
+
+def test_missing_declaration_matches_what_signpath_stores() -> None:
+    body = '<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1"/>'
+    stored = '<?xml version="1.0" encoding="utf-8"?>\n' + body
+    assert stored_form(body) == stored
+    assert xml_equal(stored, body)
+    # an explicit, different declaration is kept and therefore differs
+    assert not xml_equal(stored, '<?xml version="1.0" encoding="utf-8" ?>\n' + body)

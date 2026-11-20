@@ -551,6 +551,13 @@ def load_config(
                             f"{owner_entry[0]}; prefer one CI user per project",
                             Location(project.source),
                         )
+                    elif s.value.casefold() not in unmanaged.ci_users:
+                        # otherwise --prune would deactivate a CI user that a policy still uses
+                        diags.error(
+                            f"signing policy {sp.slug} uses CI user '{s.value}', which no project declares; "
+                            "declare it in its owning project or list it in unmanaged.ci_users",
+                            Location(project.source),
+                        )
 
     state = DesiredState(
         root=root,

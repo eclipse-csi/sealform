@@ -11,6 +11,9 @@ NAMESPACE = "http://signpath.io/artifact-configuration/v1"
 ROOT_TAG = f"{{{NAMESPACE}}}artifact-configuration"
 
 
+DEFAULT_DECLARATION = '<?xml version="1.0" encoding="utf-8"?>'
+
+
 def normalize_xml_text(text: str) -> str:
     """Normalize what SignPath does not distinguish: BOM, line endings, trailing whitespace.
 
@@ -21,8 +24,21 @@ def normalize_xml_text(text: str) -> str:
     return text.replace("\r\n", "\n").replace("\r", "\n").rstrip()
 
 
-def xml_equal(a: str, b: str) -> bool:
-    return normalize_xml_text(a) == normalize_xml_text(b)
+def stored_form(text: str) -> str:
+    """The text SignPath returns after storing ``text`` (normalized).
+
+    Verified against the sandbox: a document without an XML declaration is stored with
+    ``<?xml version="1.0" encoding="utf-8"?>`` and a newline prepended; an existing
+    declaration is kept as is.
+    """
+    text = normalize_xml_text(text)
+    if not text.startswith("<?xml"):
+        text = f"{DEFAULT_DECLARATION}\n{text}"
+    return text
+
+
+def xml_equal(live: str, desired: str) -> bool:
+    return stored_form(live) == stored_form(desired)
 
 
 XS = "http://www.w3.org/2001/XMLSchema"

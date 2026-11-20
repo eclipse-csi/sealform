@@ -28,7 +28,7 @@ How should XML be shared, and how should the tool decide whether the XML in Sign
 Chosen option: "Library of XML files referenced by name, plus per-project `file` or inline `xml`, compared as text", because SignPath stores the XML verbatim, so "what is in the repository is what is in SignPath" can be guaranteed exactly, and SignPath parameters already cover per-project variation.
 
 An artifact configuration has exactly one source: `shared: <name>` (the file `artifact-configurations/<name>.xml`), `file: <path>` or `xml: <inline text>`.
-Comparison normalizes only a leading byte order mark, line endings and trailing whitespace at the end of the document.
+Comparison normalizes only a leading byte order mark, line endings and trailing whitespace at the end of the document, and mirrors the one change SignPath makes when storing: a document without an XML declaration gets `<?xml version="1.0" encoding="utf-8"?>` prepended.
 XML is validated locally against the vendored `artifact-configuration/v1.xsd` before any API call.
 
 ### Consequences

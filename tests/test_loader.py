@@ -343,3 +343,18 @@ def test_example_configuration_is_valid() -> None:
     assert not diags.has_errors, _messages(diags)
     assert state is not None
     assert set(state.projects) == {"example.alpha", "example.beta"}
+
+
+def test_ci_reference_must_be_owned_or_unmanaged(make_config: ConfigFactory) -> None:
+    extra = "signing_policies:\n  release-signing:\n    submitters: ['ci:automation']\n"
+    root = make_config({"projects/tech.alpha.yaml": project_yaml(extra=extra)})
+    _, diags = load_config(root)
+    assert any("which no project declares" in m for m in _messages(diags))
+    org = (
+        "organization_id: 11111111-2222-3333-4444-555555555555\n"
+        "default_profile: standard\n"
+        "unmanaged:\n  ci_users: [automation]\n"
+    )
+    root = make_config({"projects/tech.alpha.yaml": project_yaml(extra=extra)}, org=org)
+    _, diags = load_config(root)
+    assert not diags.has_errors, _messages(diags)
