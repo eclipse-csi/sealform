@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../../../schemas/project.schema.json
+# Project with custom artifact configurations and without test signing.
+name: Example Beta
+repositories:
+  - https://github.com/example/beta
+  - https://github.com/example/beta-installer
+artifact_configurations:
+  installer:
+    name: Windows installer
+    file: artifact-configurations/custom/example.beta-installer.xml
+  msi:
+    name: MSI package
+    xml: |
+      <artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+        <msi-file>
+          <authenticode-sign />
+        </msi-file>
+      </artifact-configuration>
+default_artifact_configuration: default
+ci_users:
+  example.beta:
+    signing_policies: [release-signing]
+signing_policies:
+  test-signing: null   # drop the profile's test-signing policy

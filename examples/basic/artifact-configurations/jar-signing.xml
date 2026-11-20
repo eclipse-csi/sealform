@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <!-- Sign the uploaded JAR file -->
+  <jar-file>
+    <jar-sign />
+  </jar-file>
+</artifact-configuration>

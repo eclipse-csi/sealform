@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../schemas/organization.schema.json
+# One configuration root == one SignPath organization.
+organization_id: 00000000-0000-0000-0000-000000000000
+default_profile: standard
+
+pipeline_policies:
+  github-hosted-runners:
+    name: GitHub-hosted runners only
+    description: Builds must run on GitHub-hosted runners and must not be re-run.
+    definition:
+      github-build-policies:
+        version: '1.0'
+        disallow_reruns: true
+        runners:
+          require_github_hosted: true
+
+unmanaged:
+  # CI users that exist on purpose outside of any project (automation, directory sync, ...)
+  ci_users: [release-automation]

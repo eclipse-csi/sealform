@@ -1,0 +1,191 @@
+{
+  "$defs": {
+    "ExternalDefinitionSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "repository": {
+          "maxLength": 5000,
+          "minLength": 1,
+          "title": "Repository",
+          "type": "string"
+        },
+        "branch": {
+          "anyOf": [
+            {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Branch"
+        },
+        "path": {
+          "maxLength": 5000,
+          "minLength": 1,
+          "pattern": "^\\.signpath/policies/.+",
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repository",
+        "path"
+      ],
+      "title": "ExternalDefinitionSpec",
+      "type": "object"
+    },
+    "PipelinePolicySpec": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "maxLength": 5000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "definition": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Inline pipeline policy definition (YAML mapping).",
+          "title": "Definition"
+        },
+        "definition_file": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Path (relative to the configuration root) of a YAML definition.",
+          "title": "Definition File"
+        },
+        "external": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExternalDefinitionSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Definition stored in a source repository under .signpath/policies/."
+        },
+        "active": {
+          "default": true,
+          "title": "Active",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "PipelinePolicySpec",
+      "type": "object"
+    },
+    "UnmanagedSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "projects": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Projects",
+          "type": "array"
+        },
+        "ci_users": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Ci Users",
+          "type": "array"
+        },
+        "pipeline_policies": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Pipeline Policies",
+          "type": "array"
+        }
+      },
+      "title": "UnmanagedSpec",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "organization_id": {
+      "format": "uuid",
+      "title": "Organization Id",
+      "type": "string"
+    },
+    "api_url": {
+      "default": "https://app.signpath.io/Api",
+      "title": "Api Url",
+      "type": "string"
+    },
+    "default_profile": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Default Profile"
+    },
+    "pipeline_policies": {
+      "patternProperties": {
+        "^[A-Za-z0-9._-]+$": {
+          "$ref": "#/$defs/PipelinePolicySpec"
+        }
+      },
+      "propertyNames": {
+        "description": "Identifier: ASCII letters, digits, '.', '-' and '_' (case-insensitive).",
+        "maxLength": 100,
+        "minLength": 1
+      },
+      "title": "Pipeline Policies",
+      "type": "object"
+    },
+    "unmanaged": {
+      "$ref": "#/$defs/UnmanagedSpec"
+    }
+  },
+  "required": [
+    "organization_id"
+  ],
+  "title": "signpath-manager organization.yaml",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

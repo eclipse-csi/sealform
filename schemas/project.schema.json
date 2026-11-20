@@ -1,0 +1,544 @@
+{
+  "$defs": {
+    "ApprovalSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "approvers": {
+          "items": {
+            "description": "A user email (alice@example.org) or a group reference (group:<name>).",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Approvers",
+          "type": "array"
+        },
+        "required": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Required",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "approvers"
+      ],
+      "title": "ApprovalSpec",
+      "type": "object"
+    },
+    "ArtifactConfigurationSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Display name; defaults to the slug.",
+          "title": "Name"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "maxLength": 5000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "shared": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9._-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Name of a file in artifact-configurations/ (without .xml).",
+          "title": "Shared"
+        },
+        "file": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "XML file path relative to the configuration root.",
+          "title": "File"
+        },
+        "xml": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Inline artifact configuration XML.",
+          "title": "Xml"
+        },
+        "active": {
+          "default": true,
+          "title": "Active",
+          "type": "boolean"
+        }
+      },
+      "title": "ArtifactConfigurationSpec",
+      "type": "object"
+    },
+    "CIUserSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "anyOf": [
+            {
+              "maxLength": 5000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "notification_email": {
+          "anyOf": [
+            {
+              "maxLength": 320,
+              "pattern": "^[^@\\s:]+@[^@\\s]+\\.[^@\\s]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notification Email"
+        },
+        "signing_policies": {
+          "description": "Signing policies of this project this CI user submits to.",
+          "items": {
+            "description": "Identifier: ASCII letters, digits, '.', '-' and '_' (case-insensitive).",
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9._-]+$",
+            "type": "string"
+          },
+          "title": "Signing Policies",
+          "type": "array"
+        },
+        "active": {
+          "default": true,
+          "title": "Active",
+          "type": "boolean"
+        }
+      },
+      "title": "CIUserSpec",
+      "type": "object"
+    },
+    "OriginVerificationSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "branches": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Allowed branch names or patterns, e.g. main, release/*.",
+          "title": "Branches"
+        },
+        "build_definitions": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Allowed build definitions, e.g. .github/workflows/release.yml.",
+          "title": "Build Definitions"
+        }
+      },
+      "title": "OriginVerificationSpec",
+      "type": "object"
+    },
+    "SigningPolicySpec": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Display name; defaults to the slug.",
+          "title": "Name"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "maxLength": 5000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "purpose": {
+          "anyOf": [
+            {
+              "enum": [
+                "test",
+                "release"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Purpose"
+        },
+        "certificate": {
+          "anyOf": [
+            {
+              "description": "Identifier: ASCII letters, digits, '.', '-' and '_' (case-insensitive).",
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9._-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Slug of the certificate (not managed).",
+          "title": "Certificate"
+        },
+        "submitters": {
+          "description": "Additional submitters; the project's own CI users attach via ci_users.",
+          "items": {
+            "description": "A user email, 'group:<name>', or 'ci:<name>' for a CI user not owned by this project.",
+            "type": "string"
+          },
+          "title": "Submitters",
+          "type": "array"
+        },
+        "approval": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ApprovalSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "trusted_build_system_verification": {
+          "default": false,
+          "title": "Trusted Build System Verification",
+          "type": "boolean"
+        },
+        "origin_verification": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OriginVerificationSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "pipeline_policies": {
+          "patternProperties": {
+            "^[A-Za-z0-9._-]+$": {
+              "enum": [
+                "log",
+                "enforce"
+              ],
+              "type": "string"
+            }
+          },
+          "propertyNames": {
+            "description": "Identifier: ASCII letters, digits, '.', '-' and '_' (case-insensitive).",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "title": "Pipeline Policies",
+          "type": "object"
+        },
+        "disable_malware_scanning": {
+          "default": false,
+          "title": "Disable Malware Scanning",
+          "type": "boolean"
+        },
+        "active": {
+          "default": true,
+          "title": "Active",
+          "type": "boolean"
+        }
+      },
+      "title": "SigningPolicySpec",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "readers": {
+      "anyOf": [
+        {
+          "items": {
+            "description": "A user email (alice@example.org) or a group reference (group:<name>).",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Readers"
+    },
+    "configurators": {
+      "anyOf": [
+        {
+          "items": {
+            "description": "A user email (alice@example.org) or a group reference (group:<name>).",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Configurators"
+    },
+    "trusted_build_systems": {
+      "anyOf": [
+        {
+          "items": {
+            "description": "Identifier: ASCII letters, digits, '.', '-' and '_' (case-insensitive).",
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9._-]+$",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Trusted Build Systems"
+    },
+    "artifact_configurations": {
+      "anyOf": [
+        {
+          "patternProperties": {
+            "^[A-Za-z0-9._-]+$": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ArtifactConfigurationSpec"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "propertyNames": {
+            "description": "Identifier: ASCII letters, digits, '.', '-' and '_' (case-insensitive).",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Artifact Configurations"
+    },
+    "default_artifact_configuration": {
+      "anyOf": [
+        {
+          "description": "Identifier: ASCII letters, digits, '.', '-' and '_' (case-insensitive).",
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9._-]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Default Artifact Configuration"
+    },
+    "signing_policies": {
+      "anyOf": [
+        {
+          "patternProperties": {
+            "^[A-Za-z0-9._-]+$": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/SigningPolicySpec"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "propertyNames": {
+            "description": "Identifier: ASCII letters, digits, '.', '-' and '_' (case-insensitive).",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Signing Policies"
+    },
+    "name": {
+      "anyOf": [
+        {
+          "maxLength": 100,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Name"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "maxLength": 5000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Description"
+    },
+    "profile": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Profile to inherit from; defaults to organization.yaml default_profile, null for none.",
+      "title": "Profile"
+    },
+    "repositories": {
+      "anyOf": [
+        {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Repositories"
+    },
+    "ci_users": {
+      "anyOf": [
+        {
+          "additionalProperties": {
+            "$ref": "#/$defs/CIUserSpec"
+          },
+          "propertyNames": {
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Ci Users"
+    },
+    "active": {
+      "default": true,
+      "title": "Active",
+      "type": "boolean"
+    }
+  },
+  "title": "signpath-manager project (projects/<slug>.yaml)",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

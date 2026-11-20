@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../../schemas/project.schema.json
+# Minimal project: everything else comes from the 'standard' profile.
+name: Example Alpha
+description: A project that only signs JAR files.
+repositories:
+  - https://github.com/example/alpha
+readers: [group:Alpha committers]
+ci_users:
+  example.alpha:
+    notification_email: alpha-dev@example.org
+    signing_policies: [test-signing, release-signing]
+signing_policies:
+  release-signing:
+    approval:
+      approvers: [alice@example.org, group:Alpha leads]
+      required: 1
