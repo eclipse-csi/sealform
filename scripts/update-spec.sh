@@ -6,7 +6,7 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-RES=src/signpath_manager/resources
+RES=src/sealform/resources
 OPENAPI_URL="https://app.signpath.io/Api/swagger/v1/swagger.json"
 XSD_URL="https://app.signpath.io/Web/artifact-configuration/v1.xsd"
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from signpath_manager.plan.actions import Kind, Op
+from sealform.plan.actions import Kind, Op
 
 from .conftest import JAR_XML, ConfigFactory, project_yaml
 from .fake_signpath import AC, Policy, Project

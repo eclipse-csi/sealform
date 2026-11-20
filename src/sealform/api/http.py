@@ -14,12 +14,12 @@ from typing import Any
 import httpx
 from pydantic import SecretStr
 
-from signpath_manager import __version__
-from signpath_manager.api.errors import ApiError, NotFoundError, TransportError
+from sealform import __version__
+from sealform.api.errors import ApiError, NotFoundError, TransportError
 
-log = logging.getLogger("signpath_manager.api")
+log = logging.getLogger("sealform.api")
 
-USER_AGENT = f"signpath-manager/{__version__} (+https://github.com/eclipse-csi/signpath-manager)"
+USER_AGENT = f"sealform/{__version__} (+https://github.com/eclipse-csi/sealform)"
 RETRYABLE_GET = {429, 502, 503, 504}
 RETRYABLE_WRITE = {429}  # the request was not processed
 

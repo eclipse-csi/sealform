@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from signpath_manager.api.models import is_inactive
-from signpath_manager.config.desired import Principal
-from signpath_manager.live.state import LiveCIUser, LiveState
+from sealform.api.models import is_inactive
+from sealform.config.desired import Principal
+from sealform.live.state import LiveCIUser, LiveState
 
 PENDING_PREFIX = "new:ci:"
 

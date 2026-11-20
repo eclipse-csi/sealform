@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
-from signpath_manager.api.models import (
+from sealform.api.models import (
     Certificate,
     CIUserDetail,
     InteractiveUserDetail,

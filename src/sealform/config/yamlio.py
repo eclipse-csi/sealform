@@ -13,7 +13,7 @@ from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.error import MarkedYAMLError, YAMLError
 from ruamel.yaml.scalarstring import LiteralScalarString
 
-from signpath_manager.diagnostics import Location
+from sealform.diagnostics import Location
 
 
 class YamlLoadError(Exception):

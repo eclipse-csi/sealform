@@ -1,4 +1,4 @@
-from signpath_manager.config.xml import normalize_xml_text, stored_form, validate_xml, xml_equal
+from sealform.config.xml import normalize_xml_text, stored_form, validate_xml, xml_equal
 
 from .conftest import JAR_XML
 

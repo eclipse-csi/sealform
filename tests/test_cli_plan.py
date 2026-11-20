@@ -6,8 +6,8 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from signpath_manager import cli as cli_module
-from signpath_manager.cli import cli
+from sealform import cli as cli_module
+from sealform.cli import cli
 
 from .conftest import ConfigFactory, project_yaml
 from .fake_signpath import FakeSignPath

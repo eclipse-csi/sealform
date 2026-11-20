@@ -1,4 +1,4 @@
-# signpath-manager
+# sealform
 
 Manage a [SignPath.io](https://signpath.io) organization as code.
 
@@ -9,11 +9,13 @@ Certificates, interactive users, user groups and trusted build systems are refer
 This repository contains the tool only.
 Organization configurations (for example the Eclipse Foundation one) live in their own repositories.
 
+sealform is an independent project: it is not affiliated with, endorsed by, or maintained by the makers of SignPath.
+
 ## Install
 
 ```console
-uv tool run signpath-manager --help     # or uvx; uv fetches a suitable Python if needed
-uv tool install signpath-manager       # or pipx install signpath-manager
+uv tool run sealform --help     # or uvx; uv fetches a suitable Python if needed
+uv tool install sealform       # or pipx install sealform
 ```
 
 ## Quick start
@@ -21,13 +23,13 @@ uv tool install signpath-manager       # or pipx install signpath-manager
 ```console
 # 1. bootstrap a configuration from an existing organization
 export SIGNPATH_API_TOKEN=...            # never passed as a command-line argument
-signpath-manager --organization-id <uuid> import -o my-org
-signpath-manager -c my-org plan          # expect: "No changes."
+sealform --organization-id <uuid> import -o my-org
+sealform -c my-org plan          # expect: "No changes."
 
 # 2. edit the YAML, then review and apply
-signpath-manager -c my-org validate      # offline
-signpath-manager -c my-org plan
-signpath-manager -c my-org apply
+sealform -c my-org validate      # offline
+sealform -c my-org plan
+sealform -c my-org apply
 ```
 
 A minimal project file, inheriting everything else from a profile:

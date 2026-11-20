@@ -5,9 +5,9 @@ from __future__ import annotations
 import difflib
 from typing import Any
 
-from signpath_manager.api.client import SignPathClient
-from signpath_manager.api.models import SigningPolicyDetail, is_inactive
-from signpath_manager.config.desired import (
+from sealform.api.client import SignPathClient
+from sealform.api.models import SigningPolicyDetail, is_inactive
+from sealform.config.desired import (
     DesiredArtifactConfiguration,
     DesiredCIUser,
     DesiredPipelinePolicy,
@@ -16,10 +16,10 @@ from signpath_manager.config.desired import (
     DesiredState,
     Principal,
 )
-from signpath_manager.config.xml import stored_form, xml_equal
-from signpath_manager.config.yamlio import safe_load
-from signpath_manager.diagnostics import Diagnostics, Location
-from signpath_manager.live.state import (
+from sealform.config.xml import stored_form, xml_equal
+from sealform.config.yamlio import safe_load
+from sealform.diagnostics import Diagnostics, Location
+from sealform.live.state import (
     LiveArtifactConfiguration,
     LiveCIUser,
     LivePipelinePolicy,
@@ -28,8 +28,8 @@ from signpath_manager.live.state import (
     LiveState,
     Scope,
 )
-from signpath_manager.plan.actions import Action, Change, Drift, Kind, Op, Phase, Plan, Precondition
-from signpath_manager.plan.resolve import Resolver, is_pending
+from sealform.plan.actions import Action, Change, Drift, Kind, Op, Phase, Plan, Precondition
+from sealform.plan.resolve import Resolver, is_pending
 
 INITIAL_AC_SLUG = "initial"
 PURPOSES = {"TestSigning": "test", "ReleaseSigning": "release"}

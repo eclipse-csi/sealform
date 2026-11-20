@@ -8,9 +8,9 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import TypeVar
 
-from signpath_manager.api.client import SignPathClient
-from signpath_manager.api.errors import NotFoundError
-from signpath_manager.api.models import (
+from sealform.api.client import SignPathClient
+from sealform.api.errors import NotFoundError
+from sealform.api.models import (
     CIUserDetail,
     InteractiveUserDetail,
     PipelinePolicyDetail,
@@ -19,8 +19,8 @@ from signpath_manager.api.models import (
     UserGroupDetail,
     is_inactive,
 )
-from signpath_manager.config.desired import DesiredState
-from signpath_manager.live.state import (
+from sealform.config.desired import DesiredState
+from sealform.live.state import (
     LiveArtifactConfiguration,
     LiveCIUser,
     LivePipelinePolicy,
@@ -30,7 +30,7 @@ from signpath_manager.live.state import (
     Scope,
 )
 
-log = logging.getLogger("signpath_manager.fetch")
+log = logging.getLogger("sealform.fetch")
 T = TypeVar("T")
 R = TypeVar("R")
 

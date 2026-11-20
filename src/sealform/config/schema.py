@@ -6,12 +6,12 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from signpath_manager.config.model import OrganizationSpec, ProfileSpec, ProjectSpec
+from sealform.config.model import OrganizationSpec, ProfileSpec, ProjectSpec
 
 SCHEMAS: dict[str, tuple[type[BaseModel], str]] = {
-    "organization": (OrganizationSpec, "signpath-manager organization.yaml"),
-    "profile": (ProfileSpec, "signpath-manager profile (profiles/<name>.yaml)"),
-    "project": (ProjectSpec, "signpath-manager project (projects/<slug>.yaml)"),
+    "organization": (OrganizationSpec, "sealform organization.yaml"),
+    "profile": (ProfileSpec, "sealform profile (profiles/<name>.yaml)"),
+    "project": (ProjectSpec, "sealform project (projects/<slug>.yaml)"),
 }
 
 

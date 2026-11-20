@@ -7,12 +7,12 @@ from dataclasses import dataclass, field
 from enum import IntEnum, StrEnum
 from typing import TYPE_CHECKING, Any
 
-from signpath_manager.diagnostics import Diagnostics
+from sealform.diagnostics import Diagnostics
 
 if TYPE_CHECKING:
-    from signpath_manager.api.client import SignPathClient
-    from signpath_manager.api.models import Me, Organization
-    from signpath_manager.plan.resolve import Resolver
+    from sealform.api.client import SignPathClient
+    from sealform.api.models import Me, Organization
+    from sealform.plan.resolve import Resolver
 
 
 class Op(StrEnum):

@@ -8,7 +8,7 @@ from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
-from signpath_manager.config.desired import (
+from sealform.config.desired import (
     DesiredApproval,
     DesiredArtifactConfiguration,
     DesiredCIUser,
@@ -20,16 +20,16 @@ from signpath_manager.config.desired import (
     Principal,
     Unmanaged,
 )
-from signpath_manager.config.merge import drop_nulls, merge_profile
-from signpath_manager.config.model import (
+from sealform.config.merge import drop_nulls, merge_profile
+from sealform.config.model import (
     SLUG_RE,
     OrganizationSpec,
     ProfileSpec,
     ProjectSpec,
 )
-from signpath_manager.config.xml import validate_xml
-from signpath_manager.config.yamlio import YamlDocument, YamlLoadError, dump_yaml, load_yaml_file, safe_load
-from signpath_manager.diagnostics import Diagnostics, Location
+from sealform.config.xml import validate_xml
+from sealform.config.yamlio import YamlDocument, YamlLoadError, dump_yaml, load_yaml_file, safe_load
+from sealform.diagnostics import Diagnostics, Location
 
 ORGANIZATION_FILE = "organization.yaml"
 PROFILES_DIR = "profiles"

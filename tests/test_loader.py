@@ -4,9 +4,9 @@ from pathlib import Path
 
 import pytest
 
-from signpath_manager.config.desired import Principal
-from signpath_manager.config.loader import load_config
-from signpath_manager.diagnostics import Diagnostics
+from sealform.config.desired import Principal
+from sealform.config.loader import load_config
+from sealform.diagnostics import Diagnostics
 
 from .conftest import MSI_XML, ConfigFactory, project_yaml
 

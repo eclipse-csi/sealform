@@ -538,7 +538,7 @@
       "type": "boolean"
     }
   },
-  "title": "signpath-manager project (projects/<slug>.yaml)",
+  "title": "sealform project (projects/<slug>.yaml)",
   "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema"
 }

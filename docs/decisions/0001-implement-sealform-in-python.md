@@ -3,11 +3,11 @@ status: accepted
 date: 2026-11-20
 ---
 
-# Implement signpath-manager in Python
+# Implement sealform in Python
 
 ## Context and Problem Statement
 
-signpath-manager is a new CLI that reconciles YAML configuration with the SignPath REST API.
+sealform is a new CLI that reconciles YAML configuration with the SignPath REST API.
 It will be maintained by the Eclipse Foundation security team and run both by operators and from the CI of configuration repositories.
 Which language and runtime should it be written in?
 
@@ -31,7 +31,7 @@ Chosen option: "Python", because it matches the team's existing stack (otterdog)
 
 * Good, because maintainers can reuse otterdog practices and libraries (pydantic, ruamel.yaml, rich, click).
 * Good, because the configuration schema, validation messages and JSON Schema come from one set of model classes.
-* Bad, because distribution needs a Python runtime (mitigated by publishing to PyPI: `uv tool run signpath-manager` fetches a suitable Python and runs the tool anywhere uv is available).
+* Bad, because distribution needs a Python runtime (mitigated by publishing to PyPI: `uv tool run sealform` fetches a suitable Python and runs the tool anywhere uv is available).
 
 ### Confirmation
 

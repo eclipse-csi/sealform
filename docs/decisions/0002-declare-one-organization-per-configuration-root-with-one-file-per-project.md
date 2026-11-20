@@ -40,7 +40,7 @@ All file references are relative to the configuration root and may not escape it
 
 ### Confirmation
 
-`signpath-manager validate` rejects project files whose name is not a valid slug and slugs that collide case-insensitively.
+`sealform validate` rejects project files whose name is not a valid slug and slugs that collide case-insensitively.
 
 ## Pros and Cons of the Options
 

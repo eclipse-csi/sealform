@@ -1,4 +1,4 @@
-"""Import a live organization into a configuration root (``signpath-manager import``).
+"""Import a live organization into a configuration root (``sealform import``).
 
 The goal is a faithful round trip: ``import`` followed by ``plan`` reports no change.
 """
@@ -12,14 +12,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from signpath_manager.api.models import Participant
-from signpath_manager.config.loader import LIBRARY_DIR, ORGANIZATION_FILE, PROFILES_DIR, PROJECTS_DIR
-from signpath_manager.config.merge import merge_profile
-from signpath_manager.config.model import SLUG_RE, ProjectSpec
-from signpath_manager.config.xml import stored_form
-from signpath_manager.config.yamlio import dump_yaml, load_yaml_file
-from signpath_manager.live.state import LiveCIUser, LiveProject, LiveState
-from signpath_manager.plan.diff import PURPOSES, comparable_policy
+from sealform.api.models import Participant
+from sealform.config.loader import LIBRARY_DIR, ORGANIZATION_FILE, PROFILES_DIR, PROJECTS_DIR
+from sealform.config.merge import merge_profile
+from sealform.config.model import SLUG_RE, ProjectSpec
+from sealform.config.xml import stored_form
+from sealform.config.yamlio import dump_yaml, load_yaml_file
+from sealform.live.state import LiveCIUser, LiveProject, LiveState
+from sealform.plan.diff import PURPOSES, comparable_policy
 
 CUSTOM_DIR = f"{LIBRARY_DIR}/custom"
 PIPELINE_DIR = "pipeline-policies"
@@ -33,7 +33,7 @@ class ImportReport:
     skipped_files: list[str] = field(default_factory=list)
 
     def to_markdown(self) -> str:
-        lines = ["# signpath-manager import report", ""]
+        lines = ["# sealform import report", ""]
         if self.problems:
             lines += ["## Needs attention", ""]
             lines += [f"* {p}" for p in self.problems]
@@ -440,7 +440,7 @@ def _diff_against(full: dict[str, Any], profile: dict[str, Any]) -> dict[str, An
 
 
 def _entry_delta(entry: dict[str, Any], inherited: dict[str, Any], kind: str) -> dict[str, Any]:
-    from signpath_manager.config.model import ArtifactConfigurationSpec, SigningPolicySpec
+    from sealform.config.model import ArtifactConfigurationSpec, SigningPolicySpec
 
     model = SigningPolicySpec if kind == "signing_policies" else ArtifactConfigurationSpec
     mine = model.model_validate(entry).model_dump()

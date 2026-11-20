@@ -1,5 +1,5 @@
 [project]
-name = "signpath-manager"
+name = "sealform"
 dynamic = ["version"]
 description = "Manage SignPath.io organizations (projects, signing policies, artifact configurations, CI users) as code."
 readme = "README.md"
@@ -28,11 +28,11 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/eclipse-csi/signpath-manager"
-Issues = "https://github.com/eclipse-csi/signpath-manager/issues"
+Homepage = "https://github.com/eclipse-csi/sealform"
+Issues = "https://github.com/eclipse-csi/sealform/issues"
 
 [project.scripts]
-signpath-manager = "signpath_manager.cli:main"
+sealform = "sealform.cli:main"
 
 [dependency-groups]
 dev = [
@@ -48,10 +48,10 @@ requires = ["hatchling>=1.25"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
-path = "src/signpath_manager/__init__.py"
+path = "src/sealform/__init__.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/signpath_manager"]
+packages = ["src/sealform"]
 
 [tool.ruff]
 line-length = 110
@@ -72,7 +72,7 @@ ignore = [
 [tool.mypy]
 python_version = "3.12"
 strict = true
-packages = ["signpath_manager"]
+packages = ["sealform"]
 mypy_path = "src"
 
 [[tool.mypy.overrides]]

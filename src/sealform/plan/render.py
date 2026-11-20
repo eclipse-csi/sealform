@@ -8,8 +8,8 @@ from typing import Any
 from rich.console import Console
 from rich.markup import escape
 
-from signpath_manager.diagnostics import Severity
-from signpath_manager.plan.actions import Action, Op, Plan
+from sealform.diagnostics import Severity
+from sealform.plan.actions import Action, Op, Plan
 
 SYMBOLS = {
     Op.CREATE: ("+", "green"),

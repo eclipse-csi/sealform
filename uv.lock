@@ -830,7 +830,7 @@ wheels = [
 ]
 
 [[package]]
-name = "signpath-manager"
+name = "sealform"
 source = { editable = "." }
 dependencies = [
     { name = "click" },

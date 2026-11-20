@@ -1,4 +1,4 @@
-"""Typed client for the SignPath API operations used by signpath-manager."""
+"""Typed client for the SignPath API operations used by sealform."""
 
 from __future__ import annotations
 
@@ -7,8 +7,8 @@ from urllib.parse import quote
 
 from pydantic import TypeAdapter
 
-from signpath_manager.api.http import HttpSession, Response
-from signpath_manager.api.models import (
+from sealform.api.http import HttpSession, Response
+from sealform.api.models import (
     Certificate,
     CIUserDetail,
     CreatedCIUser,

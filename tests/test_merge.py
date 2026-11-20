@@ -1,4 +1,4 @@
-from signpath_manager.config.merge import merge_profile
+from sealform.config.merge import merge_profile
 
 
 def test_maps_merge_deeply() -> None:

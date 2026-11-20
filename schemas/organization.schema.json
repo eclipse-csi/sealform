@@ -185,7 +185,7 @@
   "required": [
     "organization_id"
   ],
-  "title": "signpath-manager organization.yaml",
+  "title": "sealform organization.yaml",
   "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema"
 }

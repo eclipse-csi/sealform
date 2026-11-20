@@ -4,14 +4,14 @@ from pathlib import Path
 
 from pydantic import SecretStr
 
-from signpath_manager.api.client import SignPathClient
-from signpath_manager.api.http import HttpSession
-from signpath_manager.config.desired import DesiredState
-from signpath_manager.config.loader import load_config
-from signpath_manager.live.fetch import Fetcher, FetchRequest
-from signpath_manager.live.state import Scope
-from signpath_manager.plan.actions import Plan
-from signpath_manager.plan.diff import build_plan
+from sealform.api.client import SignPathClient
+from sealform.api.http import HttpSession
+from sealform.config.desired import DesiredState
+from sealform.config.loader import load_config
+from sealform.live.fetch import Fetcher, FetchRequest
+from sealform.live.state import Scope
+from sealform.plan.actions import Plan
+from sealform.plan.diff import build_plan
 
 from .fake_signpath import BASE, FakeSignPath
 
@@ -60,8 +60,8 @@ def summary(plan: Plan) -> list[str]:
 
 
 def apply_plan(fake: FakeSignPath, plan: Plan, sink: object | None = None):  # type: ignore[no-untyped-def]
-    from signpath_manager.apply.executor import Executor
-    from signpath_manager.tokens.sinks import DiscardSink
+    from sealform.apply.executor import Executor
+    from sealform.tokens.sinks import DiscardSink
 
     executor = Executor(client_for(fake), plan, sink or DiscardSink(), parallelism=2)  # type: ignore[arg-type]
     return executor.run()

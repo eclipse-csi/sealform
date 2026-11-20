@@ -8,21 +8,21 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any
 
-from signpath_manager.api.client import SignPathClient
-from signpath_manager.api.errors import ApiError, StalePlanError, TransportError
-from signpath_manager.config.desired import (
+from sealform.api.client import SignPathClient
+from sealform.api.errors import ApiError, StalePlanError, TransportError
+from sealform.config.desired import (
     DesiredArtifactConfiguration,
     DesiredCIUser,
     DesiredPipelinePolicy,
     DesiredProject,
     DesiredSigningPolicy,
 )
-from signpath_manager.config.xml import stored_form
-from signpath_manager.live.state import LiveArtifactConfiguration, LiveCIUser, LivePipelinePolicy, LiveProject
-from signpath_manager.plan.actions import Action, Kind, Op, Plan, Precondition
-from signpath_manager.plan.diff import INITIAL_AC_SLUG
-from signpath_manager.plan.resolve import is_pending
-from signpath_manager.tokens.sinks import TokenSink
+from sealform.config.xml import stored_form
+from sealform.live.state import LiveArtifactConfiguration, LiveCIUser, LivePipelinePolicy, LiveProject
+from sealform.plan.actions import Action, Kind, Op, Plan, Precondition
+from sealform.plan.diff import INITIAL_AC_SLUG
+from sealform.plan.resolve import is_pending
+from sealform.tokens.sinks import TokenSink
 
 PURPOSE_API = {"test": "TestSigning", "release": "ReleaseSigning"}
 LEVEL_API = {"log": "Log", "enforce": "Enforce"}

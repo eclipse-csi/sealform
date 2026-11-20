@@ -4,8 +4,8 @@ import httpx
 import pytest
 from pydantic import SecretStr
 
-from signpath_manager.api.errors import ApiError, NotFoundError, TransportError
-from signpath_manager.api.http import USER_AGENT, HttpSession
+from sealform.api.errors import ApiError, NotFoundError, TransportError
+from sealform.api.http import USER_AGENT, HttpSession
 
 ORG = "11111111-2222-3333-4444-555555555555"
 TOKEN = SecretStr("s3cr3t-token-value")

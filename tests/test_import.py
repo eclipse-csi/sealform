@@ -3,9 +3,9 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
-from signpath_manager.config.yamlio import load_yaml_file
-from signpath_manager.importer.export import Importer, ImportReport
-from signpath_manager.live.fetch import Fetcher, FetchRequest
+from sealform.config.yamlio import load_yaml_file
+from sealform.importer.export import Importer, ImportReport
+from sealform.live.fetch import Fetcher, FetchRequest
 
 from .conftest import DEFAULT_PROFILE, JAR_XML, MSI_XML, ConfigFactory, project_yaml
 from .fake_signpath import ORG_ID, FakeSignPath

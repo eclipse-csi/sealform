@@ -15,24 +15,24 @@ import httpx
 from rich.console import Console
 from rich.markup import escape
 
-from signpath_manager import __version__
-from signpath_manager.api.client import SignPathClient
-from signpath_manager.api.errors import ApiError, TransportError
-from signpath_manager.api.http import HttpSession
-from signpath_manager.apply.executor import Executor, Outcome
-from signpath_manager.auth import TokenError, resolve_token
-from signpath_manager.config.desired import DesiredState
-from signpath_manager.config.loader import load_config
-from signpath_manager.config.model import DEFAULT_API_URL
-from signpath_manager.config.schema import SCHEMAS, json_schema
-from signpath_manager.diagnostics import Diagnostics, Severity
-from signpath_manager.importer.export import Importer
-from signpath_manager.live.fetch import Fetcher, FetchRequest
-from signpath_manager.live.state import Scope
-from signpath_manager.plan.actions import Plan
-from signpath_manager.plan.diff import build_plan
-from signpath_manager.plan.render import render_plan
-from signpath_manager.tokens.sinks import DiscardSink, FileSink, TokenSink, TokenSinkError, TtySink
+from sealform import __version__
+from sealform.api.client import SignPathClient
+from sealform.api.errors import ApiError, TransportError
+from sealform.api.http import HttpSession
+from sealform.apply.executor import Executor, Outcome
+from sealform.auth import TokenError, resolve_token
+from sealform.config.desired import DesiredState
+from sealform.config.loader import load_config
+from sealform.config.model import DEFAULT_API_URL
+from sealform.config.schema import SCHEMAS, json_schema
+from sealform.diagnostics import Diagnostics, Severity
+from sealform.importer.export import Importer
+from sealform.live.fetch import Fetcher, FetchRequest
+from sealform.live.state import Scope
+from sealform.plan.actions import Plan
+from sealform.plan.diff import build_plan
+from sealform.plan.render import render_plan
+from sealform.tokens.sinks import DiscardSink, FileSink, TokenSink, TokenSinkError, TtySink
 
 # Tests replace this to talk to an in-memory fake of the SignPath API.
 TransportFactory = Callable[[], httpx.BaseTransport | None]
@@ -72,7 +72,7 @@ def print_diagnostics(diags: Diagnostics, console: Console | None = None) -> Non
 
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
-@click.version_option(__version__, prog_name="signpath-manager")
+@click.version_option(__version__, prog_name="sealform")
 @click.option(
     "-c",
     "--config",
@@ -391,7 +391,7 @@ def apply(
         out.print(
             "[yellow]Discarded the API tokens of new CI users: "
             + ", ".join(sink.discarded)
-            + ". Use 'signpath-manager ci-user rotate-token NAME' to obtain usable tokens.[/yellow]"
+            + ". Use 'sealform ci-user rotate-token NAME' to obtain usable tokens.[/yellow]"
         )
     if not outcome.success:
         sys.exit(1)
@@ -473,7 +473,7 @@ def import_(
     organization_id = settings.organization_id
     api_url = settings.api_url
     if org_file.is_file():
-        from signpath_manager.config.yamlio import YamlLoadError, load_yaml_file
+        from sealform.config.yamlio import YamlLoadError, load_yaml_file
 
         try:
             data = load_yaml_file(org_file).data or {}
@@ -524,7 +524,7 @@ def import_(
     print_diagnostics(diags, err)
     if diags.has_errors:
         fail("the imported configuration does not validate; see the errors above")
-    err.print("Next: run 'signpath-manager -c <dir> plan' and expect no changes.")
+    err.print("Next: run 'sealform -c <dir> plan' and expect no changes.")
 
 
 @cli.command()

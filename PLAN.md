@@ -1,4 +1,4 @@
-# signpath-manager — implementation plan
+# sealform — implementation plan
 
 A CLI that manages a SignPath.io organization as code: projects, signing policies,
 artifact configurations, CI users and pipeline policies are declared in YAML and
@@ -20,6 +20,8 @@ without a profile followed by a `plan` showing no change, and
 
 Changes made to the plan during implementation:
 
+* **The project was renamed from `signpath-manager` to `sealform`** so that its name does not suggest
+  an endorsement by SignPath ([ADR-0013](docs/decisions/0013-rename-the-project-to-sealform.md)).
 * **API models are hand-written and lenient** rather than generated, because real
   responses deviate from the spec
   ([ADR-0010](docs/decisions/0010-hand-write-lenient-api-models.md)).
@@ -264,13 +266,13 @@ signing_policies:
   every affected project.
 * **Every object has `active: true` by default.** `active: false` keeps an object
   declared but deactivated.
-* **Editor support:** a JSON Schema is exported (`signpath-manager schema`) for
+* **Editor support:** a JSON Schema is exported (`sealform schema`) for
   yaml-language-server.
 
 ## 4. CLI
 
 ```text
-signpath-manager [global options] <command>
+sealform [global options] <command>
 
 Global:
   -c, --config DIR            config root (default: .)
@@ -408,7 +410,7 @@ Commands:
 
 ## 8. Tech stack and layout of this repo
 
-* Python ≥ 3.12, `uv`, src layout, entry point `signpath-manager`.
+* Python ≥ 3.12, `uv`, src layout, entry point `sealform`.
 * Runtime: `click`, `httpx`, `pydantic` v2, `ruamel.yaml`, `lxml`, `rich`.
 * Dev: `pytest`, `respx`, `ruff`, `mypy`, `datamodel-code-generator`, `pre-commit`.
 * **Vendored:** `resources/signpath-openapi.json` and `artifact-configuration-v1.xsd`.
@@ -418,11 +420,11 @@ Commands:
     methods cover the ~40 endpoints used.
   * `scripts/update-spec.sh` refreshes both files, and a scheduled CI job flags
     upstream spec changes.
-* Distribution: PyPI only; `uv tool run signpath-manager` (or `uvx`) runs it anywhere uv is available.
+* Distribution: PyPI only; `uv tool run sealform` (or `uvx`) runs it anywhere uv is available.
   A container image was built at first and dropped: it added maintenance without a consumer needing it.
 
 ```text
-src/signpath_manager/
+src/sealform/
   cli.py
   auth.py            # admin token resolution, SecretStr
   config/            # model.py (pydantic), loader.py, profiles.py, xml.py, schema export

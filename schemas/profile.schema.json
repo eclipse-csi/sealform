@@ -407,7 +407,7 @@
       "title": "Signing Policies"
     }
   },
-  "title": "signpath-manager profile (profiles/<name>.yaml)",
+  "title": "sealform profile (profiles/<name>.yaml)",
   "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema"
 }

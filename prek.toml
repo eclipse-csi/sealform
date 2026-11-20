@@ -32,7 +32,7 @@ exclude = { glob = [
   "docs/decisions/adr-template*.md",
   # Byte-for-byte copies of SignPath's OpenAPI document and XSD; the spec-drift
   # workflow (scripts/update-spec.sh --check) compares them with upstream.
-  "src/signpath_manager/resources/**",
+  "src/sealform/resources/**",
 ] }
 
 [update]

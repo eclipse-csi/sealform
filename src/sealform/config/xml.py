@@ -78,7 +78,7 @@ def _adapt_patterns(doc: etree._Element) -> None:
 
 @cache
 def _schema() -> etree.XMLSchema:
-    data = resources.files("signpath_manager.resources").joinpath("artifact-configuration-v1.xsd")
+    data = resources.files("sealform.resources").joinpath("artifact-configuration-v1.xsd")
     doc = etree.fromstring(data.read_bytes(), parser=etree.XMLParser(resolve_entities=False, no_network=True))
     _adapt_patterns(doc)
     return etree.XMLSchema(doc)

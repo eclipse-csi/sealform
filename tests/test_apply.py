@@ -8,11 +8,11 @@ import pytest
 from click.testing import CliRunner
 from pydantic import SecretStr
 
-from signpath_manager import cli as cli_module
-from signpath_manager.apply.executor import Executor
-from signpath_manager.cli import cli
-from signpath_manager.plan.actions import Kind, Op
-from signpath_manager.tokens.sinks import FileSink, TokenSinkError
+from sealform import cli as cli_module
+from sealform.apply.executor import Executor
+from sealform.cli import cli
+from sealform.plan.actions import Kind, Op
+from sealform.tokens.sinks import FileSink, TokenSinkError
 
 from .conftest import MSI_XML, ConfigFactory, project_yaml
 from .fake_signpath import AC, FakeSignPath, Project

@@ -5,8 +5,8 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from signpath_manager.cli import cli
-from signpath_manager.config.schema import SCHEMAS, json_schema
+from sealform.cli import cli
+from sealform.config.schema import SCHEMAS, json_schema
 
 from .conftest import ConfigFactory, project_yaml
 
@@ -30,4 +30,4 @@ def test_validate_reports_errors_with_location(make_config: ConfigFactory) -> No
 def test_committed_json_schemas_are_up_to_date() -> None:
     for kind in SCHEMAS:
         committed = json.loads((REPO / "schemas" / f"{kind}.schema.json").read_text())
-        assert committed == json_schema(kind), f"run: signpath-manager schema -o schemas ({kind})"
+        assert committed == json_schema(kind), f"run: sealform schema -o schemas ({kind})"

@@ -1,4 +1,4 @@
-# Running signpath-manager from a configuration repository
+# Running sealform from a configuration repository
 
 The organization configuration lives in its own repository.
 A typical setup reviews changes in pull requests and applies them on merge.
@@ -21,7 +21,7 @@ Two options:
 
 * an operator runs `apply` for the project locally, receives the token, and stores it in the project's CI;
 * the workflow passes `--discard-new-ci-tokens`, and an operator later runs
-  `signpath-manager ci-user rotate-token <name>` to obtain a token.
+  `sealform ci-user rotate-token <name>` to obtain a token.
 
 ## Example GitHub Actions workflow
 
@@ -45,8 +45,8 @@ jobs:
         with:
           persist-credentials: false
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
-      - run: uvx signpath-manager validate
-      - run: uvx signpath-manager plan
+      - run: uvx sealform validate
+      - run: uvx sealform plan
         env:
           SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_READER_TOKEN }}
 
@@ -60,21 +60,21 @@ jobs:
         with:
           persist-credentials: false
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
-      - run: uvx signpath-manager apply --yes --discard-new-ci-tokens
+      - run: uvx sealform apply --yes --discard-new-ci-tokens
         env:
           SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_ADMIN_TOKEN }}
 ```
 
-Pin `signpath-manager` to a version (`uvx signpath-manager@X.Y.Z`) once releases are published.
+Pin `sealform` to a version (`uvx sealform@X.Y.Z`) once releases are published.
 `--prune` is best kept to deliberate, manual runs.
 
 ## Bootstrapping from an existing organization
 
 ```console
-signpath-manager --organization-id <uuid> import -o .
+sealform --organization-id <uuid> import -o .
 # write profiles/<name>.yaml from what most projects share, then:
-signpath-manager import -o . --profile <name> --force
-signpath-manager plan              # expect: No changes.
+sealform import -o . --profile <name> --force
+sealform plan              # expect: No changes.
 ```
 
 `import-report.md` lists what needs attention, for example CI users shared by several projects.
