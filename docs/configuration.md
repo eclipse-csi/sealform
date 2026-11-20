@@ -75,6 +75,7 @@ artifact_configurations:
     file: artifact-configurations/jar-signing.xml   # any XML file inside the configuration root
   installer:
     file: artifact-configurations/custom/example.alpha-installer.xml
+    renamed_from: windows-installer          # optional: previous slug, see "Renaming"
   inline:
     xml: |
       <artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
@@ -87,6 +88,7 @@ ci_users:                                    # CI users owned by this project (n
     description: optional
     notification_email: alpha-dev@example.org
     signing_policies: [test-signing, release-signing]   # policies this CI user submits to
+    renamed_from: alpha-ci                   # optional: previous name, see "Renaming"
     active: true
 
 signing_policies:
@@ -107,6 +109,7 @@ signing_policies:
     pipeline_policies:                       # requires trusted_build_system_verification
       github-hosted-runners: enforce         # log | enforce
     disable_malware_scanning: false          # needs a subscription that allows it
+    renamed_from: release                    # optional: previous slug, see "Renaming"; not in templates
     active: true
 ```
 
@@ -139,6 +142,46 @@ Inside a managed object the configuration is authoritative: undeclared readers, 
 * every reference resolves to an existing user, group, CI user, certificate, trusted build system and pipeline policy;
 * certificates are valid and their purpose matches;
 * the project quota is respected.
+
+### Renaming
+
+An artifact configuration or signing policy is identified by its key, which is its slug; a CI user by its name.
+Changing the key alone makes `plan` create a new object and report the old one as drift, which `--prune` deactivates.
+For a CI user, that means a new API token.
+To rename the existing object instead, give its old slug or name in `renamed_from`:
+
+```yaml
+artifact_configurations:
+  default: null                  # only needed when the old entry is inherited from the profile
+  jar-signing:
+    renamed_from: default
+    file: artifact-configurations/jar-signing.xml
+default_artifact_configuration: jar-signing
+
+ci_users:
+  example.alpha-release:
+    renamed_from: example.alpha
+    signing_policies: [release]
+
+signing_policies:
+  release-signing: null          # only needed when the old entry is inherited from the profile
+  release:
+    renamed_from: release-signing
+    extends: signing-policies/release.yaml
+```
+
+* When the old object exists in SignPath and the new slug or name does not, `apply` edits the existing object:
+  its slug or name, along with any other field that changed.
+  A renamed default artifact configuration stays the default, a renamed signing policy keeps its submitters
+  and approvers, and a renamed CI user keeps its API token and stays a submitter of the policies it was on.
+* Otherwise `renamed_from` has no effect, so it can stay in place until every project using it has been applied.
+  `plan` warns when both the old and the new object exist.
+* The old slug or name must not also be declared, and only one entry can rename it.
+  For a CI user, this is checked across all project files, and the old name must not be in `unmanaged.ci_users`.
+  A signing policy template cannot contain `renamed_from`; put it in the profile or the project entry.
+* Other projects referring to a renamed CI user (`ci:<name>`) use its new name.
+* Signing requests that name an old slug (for example `artifact-configuration-slug` or `signing-policy-slug`
+  in a CI workflow) fail once the rename is applied: update them at the same time.
 
 ## Profiles
 

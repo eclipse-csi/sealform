@@ -127,6 +127,11 @@ class ArtifactConfigurationSpec(_Strict):
         description="XML file path relative to the configuration root, e.g. artifact-configurations/jar.xml.",
     )
     xml: str | None = Field(default=None, description="Inline artifact configuration XML.")
+    renamed_from: Slug | None = Field(
+        default=None,
+        description="Previous slug. If an artifact configuration with this slug exists in SignPath and the "
+        "new slug does not, its slug is changed instead of a new artifact configuration being created.",
+    )
     active: bool = True
 
     @model_validator(mode="before")
@@ -172,6 +177,12 @@ class SigningPolicySpec(_Strict):
     origin_verification: OriginVerificationSpec | None = None
     pipeline_policies: dict[Slug, Literal["log", "enforce"]] = Field(default_factory=dict)
     disable_malware_scanning: bool = False
+    renamed_from: Slug | None = Field(
+        default=None,
+        description="Previous slug. If a signing policy with this slug exists in SignPath and the new "
+        "slug does not, its slug is changed instead of a new signing policy being created. "
+        "Not allowed in templates.",
+    )
     active: bool = True
 
 
@@ -180,6 +191,11 @@ class CIUserSpec(_Strict):
     notification_email: Email | None = None
     signing_policies: list[Slug] = Field(
         default_factory=list, description="Signing policies of this project this CI user submits to."
+    )
+    renamed_from: Name | None = Field(
+        default=None,
+        description="Previous name. If a CI user with this name exists in SignPath and none has the "
+        "new name, it is renamed (keeping its API token) instead of a new CI user being created.",
     )
     active: bool = True
 

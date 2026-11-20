@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -143,6 +143,14 @@ class PolicyTemplates:
                 "a signing policy template cannot extend another template",
                 doc.locate(("extends",)),
                 "extends",
+            )
+            return None
+        if isinstance(doc.data, dict) and "renamed_from" in doc.data:
+            self.diags.error(
+                "a signing policy template cannot rename a policy: put 'renamed_from' in the profile or "
+                "project entry",
+                doc.locate(("renamed_from",)),
+                "renamed_from",
             )
             return None
         if _validate_model(SigningPolicySpec, doc, self.diags) is None:
@@ -302,7 +310,9 @@ class _ProjectBuilder:
                 xml=xml_text,
                 source=source,
                 active=ac.active,
+                renamed_from=ac.renamed_from,
             )
+        self._check_renames("artifact_configurations", "artifact configuration", acs)
 
         active_acs = [a for a in acs.values() if a.active]
         default_ac = spec.default_artifact_configuration
@@ -341,6 +351,7 @@ class _ProjectBuilder:
                 notification_email=ci.notification_email,
                 signing_policies=list(ci.signing_policies),
                 active=ci.active,
+                renamed_from=ci.renamed_from,
             )
 
         # signing policies
@@ -434,7 +445,9 @@ class _ProjectBuilder:
                 pipeline_policies=dict(sp.pipeline_policies),
                 disable_malware_scanning=sp.disable_malware_scanning,
                 active=sp.active,
+                renamed_from=sp.renamed_from,
             )
+        self._check_renames("signing_policies", "signing policy", policies)
 
         for dci in ci_users.values():
             for i, p in enumerate(dci.signing_policies):
@@ -461,6 +474,63 @@ class _ProjectBuilder:
             source=self.doc.path,
             profile=profile_name,
         )
+
+    def _check_renames(
+        self,
+        section: str,
+        what: str,
+        entries: Mapping[str, DesiredArtifactConfiguration] | Mapping[str, DesiredSigningPolicy],
+    ) -> None:
+        """Each previous slug names one live object, which only one entry may take over."""
+        claimed: dict[str, str] = {}  # casefolded previous slug -> slug of the entry renaming it
+        for entry in entries.values():
+            if entry.renamed_from is None:
+                continue
+            old = entry.renamed_from.casefold()
+            path = (section, entry.slug, "renamed_from")
+            if old == entry.slug.casefold():
+                self.error("'renamed_from' must differ from the slug (case is not significant)", *path)
+            elif old in entries:
+                declared = entries[old].slug
+                self.error(
+                    f"{what} '{declared}' is still declared; remove it ('{declared}: null' if it is "
+                    f"inherited) to rename it to '{entry.slug}'",
+                    *path,
+                )
+            elif old in claimed:
+                self.error(f"'{entry.renamed_from}' is already renamed to '{claimed[old]}'", *path)
+            else:
+                claimed[old] = entry.slug
+
+
+def _check_ci_user_renames(
+    renames: list[tuple[str, str, Location]],
+    ci_owner: dict[str, tuple[str, Path]],
+    unmanaged: Unmanaged,
+    diags: Diagnostics,
+) -> None:
+    """Each previous CI user name, across all project files, names one user that only one entry takes over."""
+    claimed: dict[str, str] = {}  # casefolded previous name -> new name
+    for new, old, where in renames:
+        key = old.casefold()
+        if key == new.casefold():
+            diags.error("'renamed_from' must differ from the name (case is not significant)", where)
+        elif key in ci_owner:
+            diags.error(
+                f"CI user '{old}' is still declared by project {ci_owner[key][0]}; remove it to rename "
+                f"it to '{new}'",
+                where,
+            )
+        elif key in unmanaged.ci_users:
+            diags.error(
+                f"CI user '{old}' is listed in unmanaged.ci_users; remove it from there to rename it "
+                f"to '{new}'",
+                where,
+            )
+        elif key in claimed:
+            diags.error(f"CI user '{old}' is already renamed to '{claimed[key]}'", where)
+        else:
+            claimed[key] = new
 
 
 def load_config(
@@ -514,6 +584,7 @@ def load_config(
     desired_projects: dict[str, DesiredProject] = {}
     seen_files: dict[str, Path] = {}
     ci_owner: dict[str, tuple[str, Path]] = {}
+    ci_renames: list[tuple[str, str, Location]] = []  # (new name, previous name, where)
     project_paths = sorted(project_dir.glob("*.yaml")) if project_dir.is_dir() else []
     if project_dir.is_dir():
         for extra in sorted(project_dir.glob("*.yml")):
@@ -541,7 +612,7 @@ def load_config(
             continue
 
         # CI user names must be unique across all project files, even unselected ones
-        for ci_name in raw.ci_users or {}:
+        for ci_name, ci_spec in (raw.ci_users or {}).items():
             ck = ci_name.casefold()
             if ck in ci_owner and ci_owner[ck][0] != slug:
                 diags.error(
@@ -550,6 +621,10 @@ def load_config(
                 )
             else:
                 ci_owner[ck] = (slug, path)
+            if ci_spec.renamed_from is not None:
+                ci_renames.append(
+                    (ci_name, ci_spec.renamed_from, doc.locate(("ci_users", ci_name, "renamed_from")))
+                )
 
         if selected is not None and key not in selected:
             continue
@@ -609,6 +684,7 @@ def load_config(
             diags.error(
                 f"CI user declared by project {owner} is also listed in unmanaged.ci_users", Location(path)
             )
+    _check_ci_user_renames(ci_renames, ci_owner, unmanaged, diags)
     for project in desired_projects.values():
         for sp in project.signing_policies.values():
             for s in sp.submitters:

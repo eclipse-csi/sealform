@@ -223,7 +223,8 @@ class Executor:
                 dac = action.desired
                 lac: LiveArtifactConfiguration = action.live
                 if any(ch.field == "xml" for ch in action.changes):
-                    c.edit_artifact_configuration_xml(self._project(action), lac.slug, dac.xml)
+                    # planned after any slug change, so the configuration already has the desired slug
+                    c.edit_artifact_configuration_xml(self._project(action), dac.slug, dac.xml)
                 else:
                     c.edit_artifact_configuration(
                         self._project(action),

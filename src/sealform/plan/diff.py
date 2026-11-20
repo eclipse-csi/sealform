@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import difflib
+from collections.abc import Mapping
 from typing import Any
 
 from sealform.api.client import SignPathClient
@@ -165,6 +166,24 @@ class Planner:
                     ids.append(res.id)
         return ids if ok else None
 
+    def _match_renamed[T](
+        self, dp: DesiredProject, what: str, live: Mapping[str, T], slug: str, renamed_from: str | None
+    ) -> T | None:
+        """The live object a project entry describes: the one with its slug, else its previous one."""
+        current = live.get(slug.casefold())
+        if renamed_from is None:
+            return current
+        previous = live.get(renamed_from.casefold())
+        if current is None:
+            return previous
+        if previous is not None:
+            self.diags.warning(
+                f"project {dp.slug}: {what} '{slug}' already exists, so 'renamed_from: {renamed_from}' "
+                "is ignored; remove it from the configuration",
+                Location(dp.source),
+            )
+        return current
+
     def _set_change(
         self, field: str, old: frozenset[str] | set[str], new: frozenset[str] | set[str]
     ) -> Change:
@@ -175,13 +194,12 @@ class Planner:
     def plan(self) -> Plan:
         if self.scope != "projects":
             self._plan_pipeline_policies()
-        # CI users that will be created must be known before resolving submitters anywhere
+        # CI users that will be renamed or created must be known before resolving submitters anywhere,
+        # and renamed ones must not be reported as drift
+        for dp in self.desired.projects.values():
+            for dci in dp.ci_users.values():
+                self._prepare_ci_user(dp, dci)
         if self.scope != "org":
-            for dp in self.desired.projects.values():
-                for dci in dp.ci_users.values():
-                    lci, _ = self.resolver.match_ci_user(dci.name)
-                    if lci is None and dci.active:
-                        self.resolver.plan_ci_creation(dci.name)
             for dp in self.desired.projects.values():
                 self._plan_project(dp)
         if self.scope != "projects":
@@ -451,10 +469,14 @@ class Planner:
                 )
 
         self._plan_ci_users(dp, lp)
-        for key_, dsp in dp.signing_policies.items():
-            self._plan_policy(dp, lp, dsp, source, lp.signing_policies.get(key_))
+        renamed_policies: set[str] = set()  # casefolded live slugs that change
+        for dsp in dp.signing_policies.values():
+            lsp = self._match_renamed(dp, "signing policy", lp.signing_policies, dsp.slug, dsp.renamed_from)
+            if lsp is not None and lsp.slug.casefold() != dsp.slug.casefold():
+                renamed_policies.add(lsp.slug.casefold())
+            self._plan_policy(dp, lp, dsp, source, lsp)
         for key_, lsp in lp.signing_policies.items():
-            if key_ not in dp.signing_policies and lsp.active:
+            if key_ not in dp.signing_policies and key_ not in renamed_policies and lsp.active:
                 self.drift.append(
                     Drift(Kind.SIGNING_POLICY, lsp.slug, dp.slug, "not declared", prunable=True)
                 )
@@ -498,8 +520,14 @@ class Planner:
         )
 
     def _plan_artifact_configurations(self, dp: DesiredProject, lp: LiveProject, pre: Precondition) -> None:
-        for key, dac in dp.artifact_configurations.items():
-            lac = lp.artifact_configurations.get(key)
+        # live artifact configurations whose slug changes: casefolded live slug -> desired slug
+        renamed: dict[str, str] = {}
+        for dac in dp.artifact_configurations.values():
+            lac = self._match_renamed(
+                dp, "artifact configuration", lp.artifact_configurations, dac.slug, dac.renamed_from
+            )
+            if lac is not None and lac.slug.casefold() != dac.slug.casefold():
+                renamed[lac.slug.casefold()] = dac.slug
             if lac is None:
                 self._add(self._ac_create(dp, dac))
                 if not dac.active:
@@ -520,7 +548,7 @@ class Planner:
                     Action(
                         Op.ACTIVATE,
                         Kind.ARTIFACT_CONFIGURATION,
-                        dac.slug,
+                        lac.slug,  # runs before a rename
                         dp.slug,
                         Phase.PROJECTS,
                         live=lac,
@@ -577,10 +605,11 @@ class Planner:
                 )
 
         live_default = lp.default_artifact_configuration
-        if (
-            live_default is None
-            or live_default.slug.casefold() != dp.default_artifact_configuration.casefold()
-        ):
+        # a renamed default stays the default under its new slug
+        default_after = (
+            renamed.get(live_default.slug.casefold(), live_default.slug) if live_default is not None else None
+        )
+        if default_after is None or default_after.casefold() != dp.default_artifact_configuration.casefold():
             self._add(
                 Action(
                     Op.SET_DEFAULT,
@@ -599,12 +628,32 @@ class Planner:
                 )
             )
         for key, lac in lp.artifact_configurations.items():
-            if key not in dp.artifact_configurations and lac.active:
+            if key not in dp.artifact_configurations and key not in renamed and lac.active:
                 self.drift.append(
                     Drift(Kind.ARTIFACT_CONFIGURATION, lac.slug, dp.slug, "not declared", prunable=True)
                 )
 
     # ------------------------------------------------------------------ CI users
+
+    def _prepare_ci_user(self, dp: DesiredProject, dci: DesiredCIUser) -> None:
+        lci, error = self.resolver.match_ci_user(dci.name)
+        if dci.renamed_from is not None:
+            source = Location(dp.source)
+            previous, previous_error = self.resolver.match_ci_user(dci.renamed_from)
+            if lci is not None or error is not None:
+                if previous is not None:
+                    self.diags.warning(
+                        f"project {dp.slug}: CI user '{dci.name}' already exists, so "
+                        f"'renamed_from: {dci.renamed_from}' is ignored; remove it from the configuration",
+                        source,
+                    )
+            elif previous_error is not None:
+                self.diags.error(f"project {dp.slug}: CI user {dci.name}: {previous_error}", source)
+            elif previous is not None:
+                self.resolver.plan_ci_rename(dci.name, previous)
+                return
+        if lci is None and dci.active:
+            self.resolver.plan_ci_creation(dci.name)
 
     def _plan_ci_users(self, dp: DesiredProject, lp: LiveProject | None) -> None:
         source = Location(dp.source)
@@ -819,7 +868,7 @@ class Planner:
                 Action(
                     Op.ACTIVATE,
                     Kind.SIGNING_POLICY,
-                    dsp.slug,
+                    lsp.slug,  # runs before a rename
                     dp.slug,
                     Phase.SIGNING_POLICIES,
                     live=lsp,
@@ -876,6 +925,8 @@ class Planner:
         me_id = self.live.me.user_id
         for lci in self.live.ci_users.values():
             if not lci.active or lci.id == me_id or lci.name.casefold() in unmanaged.ci_users:
+                continue
+            if self.resolver.is_renamed(lci):
                 continue
             if self.desired.ci_user_owner(lci.name) is None:
                 self.drift.append(

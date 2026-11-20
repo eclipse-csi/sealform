@@ -8,7 +8,7 @@ from sealform.config.desired import Principal
 from sealform.config.loader import load_config
 from sealform.diagnostics import Diagnostics
 
-from .conftest import DEFAULT_PROFILE, MSI_XML, ConfigFactory, project_yaml
+from .conftest import DEFAULT_ORG, DEFAULT_PROFILE, MSI_XML, ConfigFactory, project_yaml
 
 
 def _messages(diags: Diagnostics) -> list[str]:
@@ -128,6 +128,28 @@ def test_unknown_key(make_config: ConfigFactory) -> None:
         (
             "artifact_configurations:\n  default: {file: ../escape.xml}\n",
             "path is outside the configuration root",
+        ),
+        (
+            "artifact_configurations:\n  default: {renamed_from: Default}\n",
+            "'renamed_from' must differ from the slug",
+        ),
+        (
+            "artifact_configurations:\n"
+            "  jar: {renamed_from: default, file: artifact-configurations/jar.xml}\n"
+            "default_artifact_configuration: jar\n",
+            "'default' is still declared; remove it ('default: null' if it is inherited)",
+        ),
+        (
+            "artifact_configurations:\n  default: null\n"
+            "  a: {renamed_from: default, file: artifact-configurations/jar.xml}\n"
+            "  b: {renamed_from: default, file: artifact-configurations/jar.xml}\n"
+            "default_artifact_configuration: a\n",
+            "'default' is already renamed to 'a'",
+        ),
+        (
+            "signing_policies:\n  release-signing: {renamed_from: test-signing}\n",
+            "signing policy 'test-signing' is still declared; "
+            "remove it ('test-signing: null' if it is inherited)",
         ),
         (
             "signing_policies:\n  release-signing:\n    submitters: ['ci:alpha-ci']\n",
@@ -515,3 +537,44 @@ def test_file_reference_problems(make_config: ConfigFactory) -> None:
         errors["pipeline_policies.gh.definition_file"] == "file does not exist: pipeline-policies/missing.yml"
     )
     assert errors["signing_policies.release-signing.extends"] == "not a file: signing-policies"
+
+
+def test_signing_policy_template_cannot_rename(make_config: ConfigFactory) -> None:
+    extra = "signing_policies:\n  release-signing: {extends: signing-policies/renaming.yaml}\n"
+    root = make_config(
+        {
+            "projects/tech.alpha.yaml": project_yaml(extra=extra),
+            "signing-policies/renaming.yaml": "renamed_from: release\ncertificate: release-cert\n",
+        }
+    )
+    _, diags = load_config(root)
+    messages = _messages(diags)
+    assert any("a signing policy template cannot rename a policy" in m for m in messages), messages
+
+
+def test_ci_user_rename_errors(make_config: ConfigFactory) -> None:
+    def renaming(name: str, new: str, old: str) -> str:
+        return project_yaml(name, new).replace(f"  {new}:\n", f"  {new}:\n    renamed_from: {old}\n")
+
+    root = make_config(
+        {
+            "projects/tech.alpha.yaml": renaming("Alpha", "alpha-ci", "Alpha-CI"),
+            "projects/tech.beta.yaml": renaming("Beta", "beta-ci", "gamma-ci"),
+            "projects/tech.gamma.yaml": project_yaml("Gamma", "gamma-ci"),
+            "projects/tech.delta.yaml": renaming("Delta", "delta-ci", "legacy-ci"),
+            "projects/tech.epsilon.yaml": renaming("Epsilon", "epsilon-ci", "old-ci"),
+            "projects/tech.zeta.yaml": renaming("Zeta", "zeta-ci", "old-ci"),
+        },
+        org=DEFAULT_ORG + "unmanaged:\n  ci_users: [legacy-ci]\n",
+    )
+    _, diags = load_config(root)
+    messages = _messages(diags)
+    for expected in (
+        "'renamed_from' must differ from the name",
+        "CI user 'gamma-ci' is still declared by project tech.gamma",
+        "CI user 'legacy-ci' is listed in unmanaged.ci_users",
+        "CI user 'old-ci' is already renamed to 'epsilon-ci'",
+    ):
+        assert any(expected in m for m in messages), (expected, messages)
+    assert len(messages) == 4, messages
+    assert all(d.location is not None and d.location.line is not None for d in diags.errors)

@@ -39,6 +39,7 @@ class DesiredArtifactConfiguration:
     xml: str
     source: str  # human readable: "file:<path>" or "inline"
     active: bool = True
+    renamed_from: str | None = None  # previous slug, renamed in place when it still exists
 
 
 @dataclass
@@ -67,6 +68,7 @@ class DesiredSigningPolicy:
     pipeline_policies: dict[str, Literal["log", "enforce"]]
     disable_malware_scanning: bool
     active: bool = True
+    renamed_from: str | None = None  # previous slug, renamed in place when it still exists
 
 
 @dataclass
@@ -77,6 +79,7 @@ class DesiredCIUser:
     notification_email: str | None
     signing_policies: list[str]
     active: bool = True
+    renamed_from: str | None = None  # previous name, renamed in place when it still exists
 
 
 @dataclass

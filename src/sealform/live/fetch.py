@@ -57,6 +57,9 @@ class FetchRequest:
             req.project_slugs = set(desired.projects)
         for project in desired.projects.values():
             req.ci_user_names.update(project.ci_users)
+            req.ci_user_names.update(
+                c.renamed_from.casefold() for c in project.ci_users.values() if c.renamed_from
+            )
             principals = [*project.readers, *project.configurators]
             for sp in project.signing_policies.values():
                 principals.extend(sp.submitters)

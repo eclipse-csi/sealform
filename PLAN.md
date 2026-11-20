@@ -23,6 +23,9 @@ Changes made to the plan during implementation:
 * **Signing policy templates:** a policy entry can build on a template file with
   `extends: <path>` and override single fields; templates sit below profile and project
   values ([ADR-0015](docs/decisions/0015-reuse-signing-policies-through-templates.md)).
+* **Artifact configurations, signing policies and CI users can be renamed:** `renamed_from: <old slug or name>`
+  changes the slug or name of the existing object through `Edit`, instead of creating a new one and leaving the
+  old one as drift. A renamed CI user keeps its API token.
 * **`shared: <name>` references were dropped:** artifact configuration XML is referenced with
   `file: <path>` or inline `xml:`, and `import` reuses any existing XML file
   ([ADR-0014](docs/decisions/0014-reference-artifact-configuration-xml-by-file-path.md)).

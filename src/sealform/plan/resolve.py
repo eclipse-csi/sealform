@@ -48,22 +48,33 @@ class Resolver:
         for c in live.ci_user_list:
             self._labels[c.id] = f"ci:{c.name}"
         self.pending: dict[str, str] = {}  # casefolded CI user name -> pending id
+        self.renamed: dict[str, LiveCIUser] = {}  # casefolded new name -> live CI user renamed to it
 
     # -------------------------------------------------------------- CI users
 
     def match_ci_user(self, name: str) -> tuple[LiveCIUser | None, str | None]:
-        """Find the live CI user for a declared name: the active one, else a single inactive one."""
+        """Find the live CI user for a declared name: the active one, else a single inactive one.
+
+        A user that this plan renames is found under its new name.
+        """
         candidates = self.live.ci_users_named(name)
+        if not candidates:
+            return self.renamed.get(name.casefold()), None
         active = [u for u in candidates if u.active]
         if active:
             return active[0], None
         if len(candidates) == 1:
             return candidates[0], None
-        if len(candidates) > 1:
-            return None, (
-                f"several inactive CI users are named '{name}'; rename or remove the extra ones in SignPath"
-            )
-        return None, None
+        return None, (
+            f"several inactive CI users are named '{name}'; rename or remove the extra ones in SignPath"
+        )
+
+    def plan_ci_rename(self, name: str, user: LiveCIUser) -> None:
+        self.renamed[name.casefold()] = user
+        self._labels[user.id] = f"ci:{name}"
+
+    def is_renamed(self, user: LiveCIUser) -> bool:
+        return any(u.id == user.id for u in self.renamed.values())
 
     def plan_ci_creation(self, name: str) -> str:
         pid = pending_ci_id(name)

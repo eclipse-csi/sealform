@@ -82,6 +82,23 @@
           "description": "Inline artifact configuration XML.",
           "title": "Xml"
         },
+        "renamed_from": {
+          "anyOf": [
+            {
+              "description": "Identifier: ASCII letters, digits, '.', '-' and '_' (case-insensitive).",
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9._-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Previous slug. If an artifact configuration with this slug exists in SignPath and the new slug does not, its slug is changed instead of a new artifact configuration being created.",
+          "title": "Renamed From"
+        },
         "active": {
           "default": true,
           "title": "Active",
@@ -267,6 +284,23 @@
           "default": false,
           "title": "Disable Malware Scanning",
           "type": "boolean"
+        },
+        "renamed_from": {
+          "anyOf": [
+            {
+              "description": "Identifier: ASCII letters, digits, '.', '-' and '_' (case-insensitive).",
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9._-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Previous slug. If a signing policy with this slug exists in SignPath and the new slug does not, its slug is changed instead of a new signing policy being created. Not allowed in templates.",
+          "title": "Renamed From"
         },
         "active": {
           "default": true,

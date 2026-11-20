@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from sealform.plan.actions import Kind, Op
 
-from .conftest import JAR_XML, ConfigFactory, project_yaml
+from .conftest import DEFAULT_PROFILE, JAR_XML, MSI_XML, ConfigFactory, project_yaml
 from .fake_signpath import AC, Policy, Project
-from .helpers import plan_for, standard_fake, summary
+from .helpers import converge, plan_for, standard_fake, summary
 
 
 def seed_alpha(fake, *, xml: str = JAR_XML) -> None:  # type: ignore[no-untyped-def]
@@ -302,3 +302,163 @@ def test_description_line_endings_are_not_a_change(make_config: ConfigFactory) -
     )
     root = make_config({"projects/tech.alpha.yaml": project_yaml(extra=extra)})
     assert plan_for(fake, root).actions == []
+
+
+def test_renamed_default_artifact_configuration_keeps_its_identity(make_config: ConfigFactory) -> None:
+    fake = standard_fake()
+    seed_alpha(fake)
+    extra = """
+    artifact_configurations:
+      default: null
+      jar:
+        name: Default
+        renamed_from: default
+        file: artifact-configurations/jar.xml
+    """
+    root = make_config({"projects/tech.alpha.yaml": project_yaml(extra=extra)})
+    plan = plan_for(fake, root)
+    assert plan.diagnostics.items == [], [str(d) for d in plan.diagnostics.items]
+    assert summary(plan) == ["update artifact configuration jar"]
+    assert [(c.field, c.old, c.new) for c in plan.actions[0].changes] == [("slug", "default", "jar")]
+    assert plan.drift == []
+
+    follow_up = converge(fake, root)
+    assert follow_up.actions == []
+    assert follow_up.diagnostics.items == []
+    assert [(a.slug, a.is_default, a.active) for a in fake.projects[0].acs] == [("jar", True, True)]
+    assert not [r for r in fake.writes() if r[1].endswith("/ArtifactConfigurations")]
+
+
+def test_rename_reactivates_and_updates_in_order(make_config: ConfigFactory) -> None:
+    fake = standard_fake()
+    seed_alpha(fake)
+    fake.projects[0].acs.append(AC("Legacy", "legacy", None, JAR_XML, active=False))
+    extra = """
+    artifact_configurations:
+      installer:
+        name: Installer
+        renamed_from: Legacy
+        file: artifact-configurations/msi.xml
+    default_artifact_configuration: default
+    """
+    root = make_config(
+        {"projects/tech.alpha.yaml": project_yaml(extra=extra)}, library={"jar": JAR_XML, "msi": MSI_XML}
+    )
+    plan = plan_for(fake, root)
+    assert not plan.diagnostics.has_errors, [str(d) for d in plan.diagnostics.items]
+    assert summary(plan) == [
+        "activate artifact configuration legacy",
+        "update artifact configuration installer",
+        "update artifact configuration installer",
+    ]
+    assert {c.field for c in plan.actions[1].changes} == {"slug", "name"}
+    assert [c.field for c in plan.actions[2].changes] == ["xml"]
+
+    assert converge(fake, root).actions == []
+    installer = fake.projects[0].acs[1]
+    assert (installer.slug, installer.name, installer.active) == ("installer", "Installer", True)
+    assert "<msi-file>" in installer.xml
+
+
+def test_renamed_from_is_ignored_when_the_new_slug_exists(make_config: ConfigFactory) -> None:
+    fake = standard_fake()
+    seed_alpha(fake)
+    fake.projects[0].acs.append(AC("Legacy", "legacy", None, JAR_XML))
+    extra = "artifact_configurations:\n  default:\n    renamed_from: legacy\n"
+    root = make_config({"projects/tech.alpha.yaml": project_yaml(extra=extra)})
+    plan = plan_for(fake, root)
+    assert plan.actions == []
+    assert [(d.kind, d.name) for d in plan.drift] == [(Kind.ARTIFACT_CONFIGURATION, "legacy")]
+    assert any("'renamed_from: legacy' is ignored" in str(d) for d in plan.diagnostics.warnings)
+
+
+def test_renamed_from_an_unknown_slug_creates(make_config: ConfigFactory) -> None:
+    fake = standard_fake()
+    seed_alpha(fake)
+    extra = """
+    artifact_configurations:
+      installer:
+        renamed_from: never-existed
+        file: artifact-configurations/jar.xml
+    default_artifact_configuration: default
+    """
+    root = make_config({"projects/tech.alpha.yaml": project_yaml(extra=extra)})
+    plan = plan_for(fake, root)
+    assert plan.diagnostics.items == [], [str(d) for d in plan.diagnostics.items]
+    assert summary(plan) == ["create artifact configuration installer"]
+
+
+def test_renamed_signing_policy_is_reactivated_then_renamed(make_config: ConfigFactory) -> None:
+    fake = standard_fake()
+    seed_alpha(fake)
+    fake.projects[0].policies[1].active = False
+    profile = DEFAULT_PROFILE.replace(
+        "  release-signing:\n", "  release:\n    renamed_from: release-signing\n"
+    )
+    alpha = project_yaml().replace("[test-signing, release-signing]", "[test-signing, release]")
+    root = make_config({"projects/tech.alpha.yaml": alpha}, profile=profile)
+    plan = plan_for(fake, root)
+    assert plan.diagnostics.items == [], [str(d) for d in plan.diagnostics.items]
+    assert summary(plan) == ["activate signing policy release-signing", "update signing policy release"]
+    assert [(c.field, c.old, c.new) for c in plan.actions[1].changes] == [
+        ("slug", "release-signing", "release")
+    ]
+    assert plan.drift == []
+
+    assert converge(fake, root).actions == []
+    assert [(p.slug, p.active) for p in fake.projects[0].policies] == [
+        ("test-signing", True),
+        ("release", True),
+    ]
+    assert not [w for w in fake.writes() if w[1].endswith("/SigningPolicies")]
+
+
+def _renamed_ci_user(new: str, old: str, name: str = "Alpha", extra: str = "") -> str:
+    return project_yaml(name, new, extra).replace(f"  {new}:\n", f"  {new}:\n    renamed_from: {old}\n")
+
+
+def test_renamed_ci_user_keeps_its_identity_and_token(make_config: ConfigFactory) -> None:
+    fake = standard_fake()
+    seed_alpha(fake)
+    user = fake.ci_users[-1]
+    root = make_config({"projects/tech.alpha.yaml": _renamed_ci_user("alpha-builder", "alpha-ci")})
+    plan = plan_for(fake, root)
+    assert plan.diagnostics.items == [], [str(d) for d in plan.diagnostics.items]
+    assert summary(plan) == ["update CI user alpha-builder"]
+    assert [(c.field, c.old, c.new) for c in plan.actions[0].changes] == [
+        ("name", "alpha-ci", "alpha-builder")
+    ]
+    assert not plan.actions[0].issues_token
+    assert plan.drift == []
+    # a project-scoped run fetches the user under its previous name; an org run does not report it as drift
+    assert summary(plan_for(fake, root, scope="projects", projects=["tech.alpha"])) == [
+        "update CI user alpha-builder"
+    ]
+    assert plan_for(fake, root, scope="org").drift == []
+
+    assert converge(fake, root).actions == []
+    assert [u.name for u in fake.ci_users if u.id == user.id] == ["alpha-builder"]
+    assert not any(u.name == "alpha-ci" for u in fake.ci_users)
+    assert [w[1] for w in fake.writes() if w[1].startswith("/CIUsers")] == [f"/CIUsers/{user.id}/Edit"]
+
+
+def test_other_projects_reference_a_renamed_ci_user_by_its_new_name(make_config: ConfigFactory) -> None:
+    fake = standard_fake()
+    seed_alpha(fake)
+    user = fake.ci_users[-1]
+    beta = project_yaml(
+        "Beta",
+        "beta-ci",
+        extra="signing_policies:\n  release-signing:\n    submitters: ['ci:alpha-builder']\n",
+    )
+    root = make_config(
+        {
+            "projects/tech.alpha.yaml": _renamed_ci_user("alpha-builder", "alpha-ci"),
+            "projects/tech.beta.yaml": beta,
+        }
+    )
+    plan = plan_for(fake, root)
+    assert not plan.diagnostics.has_errors, [str(d) for d in plan.diagnostics.errors]
+    policy = next(a for a in plan.actions if a.project == "tech.beta" and a.name == "release-signing")
+    assert user.id in policy.resolved["submitters"]
+    assert "ci:alpha-builder" in next(c.new for c in policy.changes if c.field == "submitters")
