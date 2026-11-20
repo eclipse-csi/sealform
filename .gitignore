@@ -2,8 +2,10 @@
 .sandbox_token
 .sandbox_org_id
 
-# APM dependencies
+# APM dependencies and the files it deploys (apm install --frozen)
 apm_modules/
+.agents/
+.claude/skills/
 
 # Python
 __pycache__/

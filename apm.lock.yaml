@@ -1,0 +1,440 @@
+lockfile_version: '1'
+apm_version: 0.36.1
+dependencies:
+- repo_url: eclipse-csi/skills
+  name: conventional-commits
+  host: github.com
+  resolved_commit: 4e7bd99ddd0e669e25e3785dc364c85ce83e0a08
+  version: unknown
+  virtual_path: conventional-commits
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/conventional-commits
+  - .agents/skills/conventional-commits/SKILL.md
+  - .agents/skills/conventional-commits/references/signing.md
+  - .agents/skills/conventional-commits/scripts/validate_commit_msg.py
+  - .claude/skills/conventional-commits
+  - .claude/skills/conventional-commits/SKILL.md
+  - .claude/skills/conventional-commits/references/signing.md
+  - .claude/skills/conventional-commits/scripts/validate_commit_msg.py
+  deployed_file_hashes:
+    .agents/skills/conventional-commits/SKILL.md: sha256:b46df7208f5fcd4b7e8adafdbbd38d111d0fd95536abd8a3d80bfe7524fcd48e
+    .agents/skills/conventional-commits/references/signing.md: sha256:61957b7c4ae6f666608def767c3975ee9c83acdf0883da81e47c4e8340935e01
+    .agents/skills/conventional-commits/scripts/validate_commit_msg.py: sha256:7db3b0828a6981e24bfe8185f3bd7c62029e0a193fddb13b59aa5ed4d4e1987e
+    .claude/skills/conventional-commits/SKILL.md: sha256:b46df7208f5fcd4b7e8adafdbbd38d111d0fd95536abd8a3d80bfe7524fcd48e
+    .claude/skills/conventional-commits/references/signing.md: sha256:61957b7c4ae6f666608def767c3975ee9c83acdf0883da81e47c4e8340935e01
+    .claude/skills/conventional-commits/scripts/validate_commit_msg.py: sha256:7db3b0828a6981e24bfe8185f3bd7c62029e0a193fddb13b59aa5ed4d4e1987e
+  content_hash: sha256:44bce924629f23c82817b1c1650c36ae46c166bd03e8386e3ffb321bf6fdd916
+- repo_url: eclipse-csi/skills
+  name: madr-adr
+  host: github.com
+  resolved_commit: 4e7bd99ddd0e669e25e3785dc364c85ce83e0a08
+  version: unknown
+  virtual_path: madr-adr
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/madr-adr
+  - .agents/skills/madr-adr/SKILL.md
+  - .agents/skills/madr-adr/assets/markdownlint.yml
+  - .agents/skills/madr-adr/assets/templates/0000-use-markdown-architectural-decision-records.md
+  - .agents/skills/madr-adr/assets/templates/LICENSE-MADR.md
+  - .agents/skills/madr-adr/assets/templates/adr-template-bare-minimal.md
+  - .agents/skills/madr-adr/assets/templates/adr-template-bare.md
+  - .agents/skills/madr-adr/assets/templates/adr-template-minimal.md
+  - .agents/skills/madr-adr/assets/templates/adr-template.md
+  - .agents/skills/madr-adr/references/examples.md
+  - .agents/skills/madr-adr/references/review-checklist.md
+  - .agents/skills/madr-adr/references/section-guide.md
+  - .agents/skills/madr-adr/scripts/find_adrs.py
+  - .agents/skills/madr-adr/scripts/update_index.py
+  - .agents/skills/madr-adr/scripts/validate_madr.py
+  - .claude/skills/madr-adr
+  - .claude/skills/madr-adr/SKILL.md
+  - .claude/skills/madr-adr/assets/markdownlint.yml
+  - .claude/skills/madr-adr/assets/templates/0000-use-markdown-architectural-decision-records.md
+  - .claude/skills/madr-adr/assets/templates/LICENSE-MADR.md
+  - .claude/skills/madr-adr/assets/templates/adr-template-bare-minimal.md
+  - .claude/skills/madr-adr/assets/templates/adr-template-bare.md
+  - .claude/skills/madr-adr/assets/templates/adr-template-minimal.md
+  - .claude/skills/madr-adr/assets/templates/adr-template.md
+  - .claude/skills/madr-adr/references/examples.md
+  - .claude/skills/madr-adr/references/review-checklist.md
+  - .claude/skills/madr-adr/references/section-guide.md
+  - .claude/skills/madr-adr/scripts/find_adrs.py
+  - .claude/skills/madr-adr/scripts/update_index.py
+  - .claude/skills/madr-adr/scripts/validate_madr.py
+  deployed_file_hashes:
+    .agents/skills/madr-adr/SKILL.md: sha256:782ea29b2e3163c36e2ae875256b14bc0a717b39edd7928ddce56da739e4f35c
+    .agents/skills/madr-adr/assets/markdownlint.yml: sha256:3ea15d2911faf9962efb08b76f8a8fcced705fd72c5cb573ff228130ff2ed709
+    .agents/skills/madr-adr/assets/templates/0000-use-markdown-architectural-decision-records.md: sha256:81659c1b133199589a0cc73641688288cc32106ebbb462777d09e77e56cf7c39
+    .agents/skills/madr-adr/assets/templates/LICENSE-MADR.md: sha256:89970beb73e2a7e355862e53c03b9ff28f1e55fa23da2e61948a108d97868ce7
+    .agents/skills/madr-adr/assets/templates/adr-template-bare-minimal.md: sha256:8ef8f054fbb6b89f5638e7de91e5863825938afef18243c6499f12608b7087bb
+    .agents/skills/madr-adr/assets/templates/adr-template-bare.md: sha256:6196bf69b52ef2c118b53ba241a500df41939ebfab47efd39b87191025fb6e4e
+    .agents/skills/madr-adr/assets/templates/adr-template-minimal.md: sha256:24581feeb737b4dc5603467cf9d9453b97d1784e7251f4205774a0bbc0833d90
+    .agents/skills/madr-adr/assets/templates/adr-template.md: sha256:940d45674563e0a2c6e96b4741b2778b18fdf0d5df1f47cc2a27a841d1b5ea82
+    .agents/skills/madr-adr/references/examples.md: sha256:a597af93cecc651051db5744aad3a81fe8830cd8bf4ccb5c61f1bd3de58fa8c4
+    .agents/skills/madr-adr/references/review-checklist.md: sha256:c8495fa2a1261ca5e584cca64fa60e2a72553677965c30b7bcf28143e45ece56
+    .agents/skills/madr-adr/references/section-guide.md: sha256:157e6ce53cd492bff537b18bb145f4fb1a675fafabf30429391c1e31ae61c8a0
+    .agents/skills/madr-adr/scripts/find_adrs.py: sha256:be5708b00624f89bed37e70ea54a1fa6dfcb585099f020395b6eccaa23ccf701
+    .agents/skills/madr-adr/scripts/update_index.py: sha256:d5f69052c4da62a57f8b4dc049f66ac9d98b8464676f9161f3c477a7509a95d6
+    .agents/skills/madr-adr/scripts/validate_madr.py: sha256:5f3548428370235156407d030772f90c8f84930fb71f6416b40283279e22d37b
+    .claude/skills/madr-adr/SKILL.md: sha256:782ea29b2e3163c36e2ae875256b14bc0a717b39edd7928ddce56da739e4f35c
+    .claude/skills/madr-adr/assets/markdownlint.yml: sha256:3ea15d2911faf9962efb08b76f8a8fcced705fd72c5cb573ff228130ff2ed709
+    .claude/skills/madr-adr/assets/templates/0000-use-markdown-architectural-decision-records.md: sha256:81659c1b133199589a0cc73641688288cc32106ebbb462777d09e77e56cf7c39
+    .claude/skills/madr-adr/assets/templates/LICENSE-MADR.md: sha256:89970beb73e2a7e355862e53c03b9ff28f1e55fa23da2e61948a108d97868ce7
+    .claude/skills/madr-adr/assets/templates/adr-template-bare-minimal.md: sha256:8ef8f054fbb6b89f5638e7de91e5863825938afef18243c6499f12608b7087bb
+    .claude/skills/madr-adr/assets/templates/adr-template-bare.md: sha256:6196bf69b52ef2c118b53ba241a500df41939ebfab47efd39b87191025fb6e4e
+    .claude/skills/madr-adr/assets/templates/adr-template-minimal.md: sha256:24581feeb737b4dc5603467cf9d9453b97d1784e7251f4205774a0bbc0833d90
+    .claude/skills/madr-adr/assets/templates/adr-template.md: sha256:940d45674563e0a2c6e96b4741b2778b18fdf0d5df1f47cc2a27a841d1b5ea82
+    .claude/skills/madr-adr/references/examples.md: sha256:a597af93cecc651051db5744aad3a81fe8830cd8bf4ccb5c61f1bd3de58fa8c4
+    .claude/skills/madr-adr/references/review-checklist.md: sha256:c8495fa2a1261ca5e584cca64fa60e2a72553677965c30b7bcf28143e45ece56
+    .claude/skills/madr-adr/references/section-guide.md: sha256:157e6ce53cd492bff537b18bb145f4fb1a675fafabf30429391c1e31ae61c8a0
+    .claude/skills/madr-adr/scripts/find_adrs.py: sha256:be5708b00624f89bed37e70ea54a1fa6dfcb585099f020395b6eccaa23ccf701
+    .claude/skills/madr-adr/scripts/update_index.py: sha256:d5f69052c4da62a57f8b4dc049f66ac9d98b8464676f9161f3c477a7509a95d6
+    .claude/skills/madr-adr/scripts/validate_madr.py: sha256:5f3548428370235156407d030772f90c8f84930fb71f6416b40283279e22d37b
+  content_hash: sha256:b40df8af1dca1bbeb42be00b3440fa901bdd4498b357b6b8ef4231c0dd4ade34
+deployments:
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/conventional-commits
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/conventional-commits
+  active_owner: eclipse-csi/skills/conventional-commits
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/conventional-commits/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/conventional-commits
+  active_owner: eclipse-csi/skills/conventional-commits
+  content_hash: sha256:b46df7208f5fcd4b7e8adafdbbd38d111d0fd95536abd8a3d80bfe7524fcd48e
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/conventional-commits/references/signing.md
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/conventional-commits
+  active_owner: eclipse-csi/skills/conventional-commits
+  content_hash: sha256:61957b7c4ae6f666608def767c3975ee9c83acdf0883da81e47c4e8340935e01
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/conventional-commits/scripts/validate_commit_msg.py
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/conventional-commits
+  active_owner: eclipse-csi/skills/conventional-commits
+  content_hash: sha256:7db3b0828a6981e24bfe8185f3bd7c62029e0a193fddb13b59aa5ed4d4e1987e
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/madr-adr
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/madr-adr/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:782ea29b2e3163c36e2ae875256b14bc0a717b39edd7928ddce56da739e4f35c
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/madr-adr/assets/markdownlint.yml
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:3ea15d2911faf9962efb08b76f8a8fcced705fd72c5cb573ff228130ff2ed709
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/madr-adr/assets/templates/0000-use-markdown-architectural-decision-records.md
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:81659c1b133199589a0cc73641688288cc32106ebbb462777d09e77e56cf7c39
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/madr-adr/assets/templates/LICENSE-MADR.md
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:89970beb73e2a7e355862e53c03b9ff28f1e55fa23da2e61948a108d97868ce7
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/madr-adr/assets/templates/adr-template-bare-minimal.md
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:8ef8f054fbb6b89f5638e7de91e5863825938afef18243c6499f12608b7087bb
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/madr-adr/assets/templates/adr-template-bare.md
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:6196bf69b52ef2c118b53ba241a500df41939ebfab47efd39b87191025fb6e4e
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/madr-adr/assets/templates/adr-template-minimal.md
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:24581feeb737b4dc5603467cf9d9453b97d1784e7251f4205774a0bbc0833d90
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/madr-adr/assets/templates/adr-template.md
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:940d45674563e0a2c6e96b4741b2778b18fdf0d5df1f47cc2a27a841d1b5ea82
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/madr-adr/references/examples.md
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:a597af93cecc651051db5744aad3a81fe8830cd8bf4ccb5c61f1bd3de58fa8c4
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/madr-adr/references/review-checklist.md
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:c8495fa2a1261ca5e584cca64fa60e2a72553677965c30b7bcf28143e45ece56
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/madr-adr/references/section-guide.md
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:157e6ce53cd492bff537b18bb145f4fb1a675fafabf30429391c1e31ae61c8a0
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/madr-adr/scripts/find_adrs.py
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:be5708b00624f89bed37e70ea54a1fa6dfcb585099f020395b6eccaa23ccf701
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/madr-adr/scripts/update_index.py
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:d5f69052c4da62a57f8b4dc049f66ac9d98b8464676f9161f3c477a7509a95d6
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/madr-adr/scripts/validate_madr.py
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:5f3548428370235156407d030772f90c8f84930fb71f6416b40283279e22d37b
+- kind: project-relative
+  target: claude
+  value: .claude/skills/conventional-commits
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/conventional-commits
+  active_owner: eclipse-csi/skills/conventional-commits
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/conventional-commits/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/conventional-commits
+  active_owner: eclipse-csi/skills/conventional-commits
+  content_hash: sha256:b46df7208f5fcd4b7e8adafdbbd38d111d0fd95536abd8a3d80bfe7524fcd48e
+- kind: project-relative
+  target: claude
+  value: .claude/skills/conventional-commits/references/signing.md
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/conventional-commits
+  active_owner: eclipse-csi/skills/conventional-commits
+  content_hash: sha256:61957b7c4ae6f666608def767c3975ee9c83acdf0883da81e47c4e8340935e01
+- kind: project-relative
+  target: claude
+  value: .claude/skills/conventional-commits/scripts/validate_commit_msg.py
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/conventional-commits
+  active_owner: eclipse-csi/skills/conventional-commits
+  content_hash: sha256:7db3b0828a6981e24bfe8185f3bd7c62029e0a193fddb13b59aa5ed4d4e1987e
+- kind: project-relative
+  target: claude
+  value: .claude/skills/madr-adr
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/madr-adr/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:782ea29b2e3163c36e2ae875256b14bc0a717b39edd7928ddce56da739e4f35c
+- kind: project-relative
+  target: claude
+  value: .claude/skills/madr-adr/assets/markdownlint.yml
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:3ea15d2911faf9962efb08b76f8a8fcced705fd72c5cb573ff228130ff2ed709
+- kind: project-relative
+  target: claude
+  value: .claude/skills/madr-adr/assets/templates/0000-use-markdown-architectural-decision-records.md
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:81659c1b133199589a0cc73641688288cc32106ebbb462777d09e77e56cf7c39
+- kind: project-relative
+  target: claude
+  value: .claude/skills/madr-adr/assets/templates/LICENSE-MADR.md
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:89970beb73e2a7e355862e53c03b9ff28f1e55fa23da2e61948a108d97868ce7
+- kind: project-relative
+  target: claude
+  value: .claude/skills/madr-adr/assets/templates/adr-template-bare-minimal.md
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:8ef8f054fbb6b89f5638e7de91e5863825938afef18243c6499f12608b7087bb
+- kind: project-relative
+  target: claude
+  value: .claude/skills/madr-adr/assets/templates/adr-template-bare.md
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:6196bf69b52ef2c118b53ba241a500df41939ebfab47efd39b87191025fb6e4e
+- kind: project-relative
+  target: claude
+  value: .claude/skills/madr-adr/assets/templates/adr-template-minimal.md
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:24581feeb737b4dc5603467cf9d9453b97d1784e7251f4205774a0bbc0833d90
+- kind: project-relative
+  target: claude
+  value: .claude/skills/madr-adr/assets/templates/adr-template.md
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:940d45674563e0a2c6e96b4741b2778b18fdf0d5df1f47cc2a27a841d1b5ea82
+- kind: project-relative
+  target: claude
+  value: .claude/skills/madr-adr/references/examples.md
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:a597af93cecc651051db5744aad3a81fe8830cd8bf4ccb5c61f1bd3de58fa8c4
+- kind: project-relative
+  target: claude
+  value: .claude/skills/madr-adr/references/review-checklist.md
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:c8495fa2a1261ca5e584cca64fa60e2a72553677965c30b7bcf28143e45ece56
+- kind: project-relative
+  target: claude
+  value: .claude/skills/madr-adr/references/section-guide.md
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:157e6ce53cd492bff537b18bb145f4fb1a675fafabf30429391c1e31ae61c8a0
+- kind: project-relative
+  target: claude
+  value: .claude/skills/madr-adr/scripts/find_adrs.py
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:be5708b00624f89bed37e70ea54a1fa6dfcb585099f020395b6eccaa23ccf701
+- kind: project-relative
+  target: claude
+  value: .claude/skills/madr-adr/scripts/update_index.py
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:d5f69052c4da62a57f8b4dc049f66ac9d98b8464676f9161f3c477a7509a95d6
+- kind: project-relative
+  target: claude
+  value: .claude/skills/madr-adr/scripts/validate_madr.py
+  runtime: null
+  scope: project
+  owners:
+  - eclipse-csi/skills/madr-adr
+  active_owner: eclipse-csi/skills/madr-adr
+  content_hash: sha256:5f3548428370235156407d030772f90c8f84930fb71f6416b40283279e22d37b
