@@ -44,11 +44,44 @@ dev = [
 ]
 
 [build-system]
-requires = ["hatchling>=1.25"]
+requires = ["hatchling", "uv-dynamic-versioning"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
-path = "src/sealform/__init__.py"
+source = "uv-dynamic-versioning"
+
+# The version comes from the latest vX.Y.Z git tag, as in otterdog: X.Y.Z on the tagged
+# commit, the next minor as a .devN pre-release (N commits after the tag) elsewhere.
+[tool.uv-dynamic-versioning]
+vcs = "git"
+latest-tag = true
+# without git metadata (e.g. Dependabot's `uv lock`), build as 0.0.0 instead of failing
+fallback-version = "0.0.0"
+format-jinja = """
+    {%- if distance == 0 -%}
+        {{ serialize_pep440(base, stage, revision) }}
+    {%- else -%}
+        {{ serialize_pep440(bump_version(base, 1), stage, revision, dev=distance) }}
+    {%- endif -%}
+"""
+
+[tool.uv]
+# the version is dynamic: rebuild the editable install when commits or tags change
+cache-keys = [{ file = "pyproject.toml" }, { git = { commit = true, tags = true } }]
+# pinned build backend (uv build / uv sync); refresh with:
+#   printf '%s\n' hatchling uv-dynamic-versioning | uv pip compile - --no-annotate --no-header
+build-constraint-dependencies = [
+  "dunamai==1.26.5",
+  "hatchling==1.33.0",
+  "jinja2==3.1.6",
+  "markupsafe==3.0.4",
+  "packaging==26.3",
+  "pathspec==1.1.1",
+  "pluggy==1.7.0",
+  "tomlkit==0.15.2",
+  "trove-classifiers==2026.9.21.13",
+  "uv-dynamic-versioning==0.14.1",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/sealform"]

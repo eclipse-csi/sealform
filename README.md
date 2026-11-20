@@ -110,6 +110,18 @@ uv run mypy
 scripts/update-spec.sh   # refresh the vendored OpenAPI document and XSD
 ```
 
+## Releasing
+
+The version comes from git tags ([uv-dynamic-versioning](https://github.com/ninoseki/uv-dynamic-versioning)):
+a commit tagged `vX.Y.Z` builds as `X.Y.Z`, any other commit as the next minor `.devN` pre-release.
+To release, tag the commit on `main` and push the tag; the release workflow builds, checks that the
+built version matches the tag, and publishes to PyPI.
+
+```console
+git tag -s vX.Y.Z -m "vX.Y.Z"
+git push origin vX.Y.Z
+```
+
 ## License
 
 [Eclipse Public License 2.0](LICENSE)

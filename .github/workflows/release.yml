@@ -19,11 +19,17 @@ jobs:
           egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # the package version is derived from the tags and the history (uv-dynamic-versioning)
+          fetch-depth: 0
           persist-credentials: false
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
-      - name: Check that the tag matches the package version
-        run: |
-          version=$(sed -n 's/^__version__ = "\(.*\)"$/\1/p' src/sealform/__init__.py)
-          test "v${version}" = "${GITHUB_REF_NAME}" || { echo "tag ${GITHUB_REF_NAME} != version ${version}"; exit 1; }
       - run: uv build
+      - name: Check that the built version matches the tag
+        run: |
+          expected="${GITHUB_REF_NAME#v}"
+          if [ ! -f "dist/sealform-${expected}-py3-none-any.whl" ]; then
+            ls dist
+            echo "::error::built version does not match tag ${GITHUB_REF_NAME}"
+            exit 1
+          fi
       - run: uv publish --trusted-publishing always

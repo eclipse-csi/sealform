@@ -31,3 +31,13 @@ def test_committed_json_schemas_are_up_to_date() -> None:
     for kind in SCHEMAS:
         committed = json.loads((REPO / "schemas" / f"{kind}.schema.json").read_text())
         assert committed == json_schema(kind), f"run: sealform schema -o schemas ({kind})"
+
+
+def test_version_comes_from_the_package_metadata() -> None:
+    from importlib.metadata import version
+
+    from sealform import __version__
+
+    assert __version__ == version("sealform")
+    result = CliRunner().invoke(cli, ["--version"])
+    assert result.output.strip() == f"sealform, version {__version__}"
