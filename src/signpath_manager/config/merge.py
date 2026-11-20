@@ -43,13 +43,13 @@ def merge_profile(profile: dict[str, Any] | None, project: dict[str, Any]) -> di
     """
     merged: dict[str, Any] = _merge(profile or {}, project, ())
     merged.pop("profile", None)
-    result: dict[str, Any] = _drop_nulls(merged)
+    result: dict[str, Any] = drop_nulls(merged)
     return result
 
 
-def _drop_nulls(node: Any) -> Any:
+def drop_nulls(node: Any) -> Any:
     if isinstance(node, dict):
-        return {k: _drop_nulls(v) for k, v in node.items() if v is not None}
+        return {k: drop_nulls(v) for k, v in node.items() if v is not None}
     if isinstance(node, list):
-        return [_drop_nulls(v) for v in node]
+        return [drop_nulls(v) for v in node]
     return node

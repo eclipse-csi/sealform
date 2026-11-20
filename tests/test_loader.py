@@ -358,3 +358,32 @@ def test_ci_reference_must_be_owned_or_unmanaged(make_config: ConfigFactory) -> 
     root = make_config({"projects/tech.alpha.yaml": project_yaml(extra=extra)}, org=org)
     _, diags = load_config(root)
     assert not diags.has_errors, _messages(diags)
+
+
+def test_nulls_remove_inherited_values_anywhere(make_config: ConfigFactory) -> None:
+    profile = (
+        "trusted_build_systems: [GitHub.com]\n"
+        "artifact_configurations:\n  default: {shared: jar}\n"
+        "signing_policies:\n"
+        "  release-signing:\n"
+        "    certificate: release-cert\n"
+        "    trusted_build_system_verification: true\n"
+        "    origin_verification: {branches: [main]}\n"
+        "    pipeline_policies: {gh: enforce, other: log}\n"
+    )
+    extra = (
+        "signing_policies:\n"
+        "  release-signing:\n"
+        "    origin_verification: null\n"
+        "    pipeline_policies: {gh: null}\n"
+    )
+    root = make_config(
+        {"projects/tech.alpha.yaml": project_yaml(extra=extra).replace("test-signing, ", "")}, profile=profile
+    )
+    state, diags = load_config(root)
+    assert not diags.has_errors, _messages(diags)
+    assert state is not None
+    policy = state.projects["tech.alpha"].signing_policies["release-signing"]
+    assert policy.origin_verification is None
+    assert policy.pipeline_policies == {"other": "log"}
+    assert policy.trusted_build_system_verification

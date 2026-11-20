@@ -23,8 +23,10 @@ from signpath_manager.apply.executor import Executor, Outcome
 from signpath_manager.auth import TokenError, resolve_token
 from signpath_manager.config.desired import DesiredState
 from signpath_manager.config.loader import load_config
+from signpath_manager.config.model import DEFAULT_API_URL
 from signpath_manager.config.schema import SCHEMAS, json_schema
 from signpath_manager.diagnostics import Diagnostics, Severity
+from signpath_manager.importer.export import Importer
 from signpath_manager.live.fetch import Fetcher, FetchRequest
 from signpath_manager.live.state import Scope
 from signpath_manager.plan.actions import Plan
@@ -393,6 +395,91 @@ def apply(
         )
     if not outcome.success:
         sys.exit(1)
+
+
+@cli.command("import")
+@click.option(
+    "-o",
+    "--output",
+    "output",
+    type=click.Path(file_okay=False, path_type=Path),
+    required=True,
+    help="Configuration root to write (created if missing).",
+)
+@click.option("-p", "--project", "projects", multiple=True, help="Only import this project (repeatable).")
+@click.option(
+    "--profile",
+    help="Write projects relative to this profile (profiles/<name>.yaml must exist in the output).",
+)
+@click.option("--include-inactive", is_flag=True, help="Also import inactive objects (as active: false).")
+@click.option("--force", is_flag=True, help="Overwrite existing project and XML files.")
+@click.pass_obj
+@api_errors
+def import_(
+    settings: Settings,
+    output: Path,
+    projects: tuple[str, ...],
+    profile: str | None,
+    include_inactive: bool,
+    force: bool,
+) -> None:
+    """Write the configuration of a live organization (round trip: import, then plan shows no change)."""
+    org_file = output / "organization.yaml"
+    organization_id = settings.organization_id
+    api_url = settings.api_url
+    if org_file.is_file():
+        from signpath_manager.config.yamlio import YamlLoadError, load_yaml_file
+
+        try:
+            data = load_yaml_file(org_file).data or {}
+        except YamlLoadError as e:
+            fail(f"{e.location}: {e.message}")
+        organization_id = organization_id or data.get("organization_id")
+        api_url = api_url or data.get("api_url")
+    if not organization_id:
+        fail("no organization ID: pass --organization-id (or $SIGNPATH_ORGANIZATION_ID)")
+    output.mkdir(parents=True, exist_ok=True)
+    client = make_client(settings, api_url or DEFAULT_API_URL, str(organization_id))
+    scope: Scope = "projects" if projects else "full"
+    request = FetchRequest(
+        scope=scope,
+        project_slugs={p.casefold() for p in projects},
+        all_projects=not projects,
+        all_ci_users=True,
+        all_pipeline_policies=not projects,
+        interactive_users=True,
+    )
+    try:
+        live = Fetcher(client, parallelism=settings.parallelism).fetch(request)
+    finally:
+        client.close()
+    missing = {p.casefold() for p in projects} - set(live.projects)
+    if missing:
+        fail(f"no such project(s) in SignPath: {', '.join(sorted(missing))}")
+    try:
+        report = Importer(
+            live,
+            output,
+            organization_id=str(organization_id),
+            profile=profile,
+            include_inactive=include_inactive,
+            force=force,
+            full_scope=not projects,
+        ).run()
+    except FileNotFoundError as e:
+        fail(str(e))
+    err = _stderr()
+    err.print(f"Wrote {len(report.written)} file(s) to {output} (see import-report.md).")
+    for problem in report.problems:
+        err.print(f"[yellow]attention:[/yellow] {escape(problem)}")
+    if report.skipped_files:
+        kept = len(report.skipped_files)
+        err.print(f"[yellow]{kept} existing file(s) differ and were kept (use --force).[/yellow]")
+    _, diags = load_config(output)
+    print_diagnostics(diags, err)
+    if diags.has_errors:
+        fail("the imported configuration does not validate; see the errors above")
+    err.print("Next: run 'signpath-manager -c <dir> plan' and expect no changes.")
 
 
 @cli.command()

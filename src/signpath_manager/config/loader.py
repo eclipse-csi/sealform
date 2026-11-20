@@ -20,7 +20,7 @@ from signpath_manager.config.desired import (
     Principal,
     Unmanaged,
 )
-from signpath_manager.config.merge import merge_profile
+from signpath_manager.config.merge import drop_nulls, merge_profile
 from signpath_manager.config.model import (
     SLUG_RE,
     OrganizationSpec,
@@ -478,7 +478,8 @@ def load_config(
         except YamlLoadError as e:
             diags.error(e.message, e.location)
             continue
-        raw = _validate_model(ProjectSpec, doc, diags)
+        # nulls are merge instructions (remove the inherited value): ignore them for the structural check
+        raw = _validate_model(ProjectSpec, doc, diags, data=drop_nulls(doc.data))
         if raw is None:
             continue
 
