@@ -17,7 +17,7 @@ from sealform.config.desired import (
     Principal,
 )
 from sealform.config.xml import stored_form, xml_equal
-from sealform.config.yamlio import safe_load
+from sealform.config.yamlio import lf, safe_load
 from sealform.diagnostics import Diagnostics, Location
 from sealform.live.state import (
     LiveArtifactConfiguration,
@@ -36,7 +36,11 @@ PURPOSES = {"TestSigning": "test", "ReleaseSigning": "release"}
 
 
 def _norm_text(value: str | None) -> str:
-    return value or ""
+    """Free text (descriptions) as compared: line endings do not count.
+
+    SignPath's web UI stores Windows line endings; YAML block scalars cannot carry them.
+    """
+    return lf(value or "")
 
 
 def _xml_diff(old: str, new: str) -> str:

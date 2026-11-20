@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import difflib
 import json
 from typing import Any
 
@@ -31,6 +32,19 @@ def _fmt(value: Any) -> str:
     return str(value)
 
 
+def _visible_lines(text: str) -> list[str]:
+    """Split on "\n" only, making carriage returns visible, so line-ending changes show up."""
+    return text.replace("\r", "\\r").split("\n")
+
+
+def _text_diff(old: str, new: str) -> str:
+    return "\n".join(
+        difflib.unified_diff(
+            _visible_lines(old), _visible_lines(new), fromfile="signpath", tofile="config", lineterm=""
+        )
+    )
+
+
 def _render_action(console: Console, action: Action) -> None:
     symbol, color = SYMBOLS[action.op]
     label = f"{action.op.value} {action.target}"
@@ -50,8 +64,16 @@ def _render_action(console: Console, action: Action) -> None:
             console.print(
                 f"      {escape(change.field)}: {escape(_fmt(change.old))} -> {escape(_fmt(change.new))}"
             )
-        if change.diff:
-            for line in change.diff.splitlines():
+        diff = change.diff
+        multiline = (
+            isinstance(change.old, str)
+            and isinstance(change.new, str)
+            and ("\n" in change.old or "\n" in change.new)
+        )
+        if diff is None and multiline:
+            diff = _text_diff(change.old, change.new)
+        if diff:
+            for line in diff.splitlines():
                 style = "green" if line.startswith("+") else "red" if line.startswith("-") else "dim"
                 console.print(f"        [{style}]{escape(line)}[/{style}]")
 

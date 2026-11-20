@@ -108,6 +108,9 @@ signing_policies:
     active: true
 ```
 
+Descriptions are compared without regard to line endings: SignPath's web UI stores Windows line endings,
+which YAML block scalars (`|`) cannot carry, so `import` writes them with `\n` and `plan` does not report the difference.
+
 ### Principals
 
 | Reference | Meaning |

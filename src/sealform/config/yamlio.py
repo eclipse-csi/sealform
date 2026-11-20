@@ -105,6 +105,11 @@ def locate(tree: Any, path: Sequence[str | int], file: Path) -> Location:
     return best
 
 
+def lf(text: str) -> str:
+    """Normalize line endings to "\n"."""
+    return text.replace("\r\n", "\n").replace("\r", "\n")
+
+
 def _literalize(node: Any) -> Any:
     if isinstance(node, Mapping):
         out = CommentedMap()
@@ -115,13 +120,19 @@ def _literalize(node: Any) -> Any:
         seq = CommentedSeq()
         seq.extend(_literalize(v) for v in node)
         return seq
-    if isinstance(node, str) and "\n" in node:
-        return LiteralScalarString(node if node.endswith("\n") else node + "\n")
+    if isinstance(node, str) and "\n" in node and "\r" not in node:
+        # ruamel picks the chomping (|-, |, |+) and indentation indicators that keep the text
+        # exact; text with carriage returns stays a double-quoted scalar, because YAML turns
+        # every line break of a block scalar into "\n" when reading it back
+        return LiteralScalarString(node)
     return node
 
 
 def dump_yaml(data: Any) -> str:
-    """Serialize plain data as block-style YAML; multi-line strings use literal blocks."""
+    """Serialize plain data as block-style YAML that loads back to exactly the same data.
+
+    Multi-line strings use literal blocks unless they contain carriage returns.
+    """
     yaml = YAML(typ="rt")
     yaml.default_flow_style = False
     yaml.indent(mapping=2, sequence=4, offset=2)

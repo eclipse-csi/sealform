@@ -198,3 +198,42 @@ def test_pipeline_policies_and_custom_xml(make_config: ConfigFactory, tmp_path: 
     }
     assert (out / "artifact-configurations/custom/tech.alpha.msi.xml").is_file()
     assert_round_trip(fake, out)
+
+
+def test_multi_line_descriptions_round_trip(make_config: ConfigFactory, tmp_path: Path) -> None:
+    fake = standard_fake()
+    source = make_config({"projects/tech.alpha.yaml": project_yaml()})
+    converge(fake, source)
+    project = fake.project("tech.alpha")
+    project.description = "pasted\r\nfrom the web UI\r\n"
+    project.acs[0].description = '<?xml version="1.0" ?>\r\n<zip-file>  \r\n</zip-file>'
+    project.policies[0].description = "two lines\nwithout a final newline"
+    next(u for u in fake.ci_users if u.name == "alpha-ci").description = "trailing\n\n"
+    out = tmp_path / "imported"
+    run_import(fake, out)
+    written = (out / "projects/tech.alpha.yaml").read_text()
+    assert "\\r" not in written  # no escaped carriage returns: readable block scalars
+    assert "description: |\n  pasted\n  from the web UI\n" in written
+    assert_round_trip(fake, out)
+
+
+def test_reimport_with_crlf_xml_reports_nothing(make_config: ConfigFactory, tmp_path: Path) -> None:
+    fake = standard_fake()
+    source = make_config({"projects/tech.alpha.yaml": project_yaml()})
+    converge(fake, source)
+    crlf_xml = "\r\n".join(
+        [
+            '<?xml version="1.0"?>',
+            '<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">',
+            "  <jar-file><jar-sign /></jar-file>",
+            "</artifact-configuration>",
+            "",
+        ]
+    )
+    fake.project("tech.alpha").acs[0].xml = crlf_xml
+    out = tmp_path / "imported"
+    run_import(fake, out)
+    xml_file = next((out / "artifact-configurations/custom").glob("*.xml"))
+    assert b"\r\n" in xml_file.read_bytes()
+    assert run_import(fake, out).skipped_files == []
+    assert_round_trip(fake, out)

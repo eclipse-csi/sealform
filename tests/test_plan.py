@@ -270,3 +270,35 @@ def test_pipeline_policies_plan(make_config: ConfigFactory) -> None:
     # project scope cannot rely on a pipeline policy that does not exist yet
     scoped = plan_for(fake, root, scope="projects", projects=["tech.alpha"])
     assert any("apply organization-level changes first" in str(d) for d in scoped.diagnostics.errors)
+
+
+def test_multi_line_text_changes_render_as_a_diff(make_config: ConfigFactory) -> None:
+    from rich.console import Console
+
+    from sealform.plan.render import render_plan
+
+    fake = standard_fake()
+    seed_alpha(fake)
+    fake.projects[0].description = "line one\r\nline two"
+    extra = "description: |-\n  line one\n  line 2\n"
+    root = make_config({"projects/tech.alpha.yaml": project_yaml(extra=extra)})
+    plan = plan_for(fake, root)
+    console = Console(record=True, width=200)
+    render_plan(plan, console)
+    text = console.export_text()
+    assert "-line two" in text
+    assert "+line 2" in text
+    assert "-line one\\r" in text  # carriage returns are made visible
+
+
+def test_description_line_endings_are_not_a_change(make_config: ConfigFactory) -> None:
+    fake = standard_fake()
+    seed_alpha(fake)
+    fake.projects[0].description = "line one\r\nline two"
+    fake.projects[0].acs[0].description = "a\r\nb\r\n"
+    extra = (
+        "description: |-\n  line one\n  line two\n"
+        "artifact_configurations:\n  default:\n    description: |\n      a\n      b\n"
+    )
+    root = make_config({"projects/tech.alpha.yaml": project_yaml(extra=extra)})
+    assert plan_for(fake, root).actions == []

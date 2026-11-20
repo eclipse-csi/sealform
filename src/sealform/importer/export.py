@@ -17,7 +17,7 @@ from sealform.config.loader import LIBRARY_DIR, ORGANIZATION_FILE, PROFILES_DIR,
 from sealform.config.merge import merge_profile
 from sealform.config.model import SLUG_RE, ProjectSpec
 from sealform.config.xml import stored_form
-from sealform.config.yamlio import dump_yaml, load_yaml_file
+from sealform.config.yamlio import dump_yaml, lf, load_yaml_file
 from sealform.live.state import LiveCIUser, LiveProject, LiveState
 from sealform.plan.diff import PURPOSES, comparable_policy
 
@@ -208,7 +208,7 @@ class Importer:
         where = f"project {d.slug}"
         full: dict[str, Any] = {"name": d.name}
         if d.description:
-            full["description"] = d.description
+            full["description"] = lf(d.description)
         if d.repository_urls:
             full["repositories"] = list(d.repository_urls)
         readers = self._refs(d.readers, f"{where} readers", allow_ci=False)
@@ -228,7 +228,7 @@ class Importer:
             if ac.name != ac.slug:
                 entry["name"] = ac.name
             if ac.description:
-                entry["description"] = ac.description
+                entry["description"] = lf(ac.description)
             entry.update(self._xml_source(lp, ac.slug, ac.xml, usage))
             if not ac.active:
                 entry["active"] = False
@@ -249,7 +249,7 @@ class Importer:
             if detail.name != detail.slug:
                 entry["name"] = detail.name
             if detail.description:
-                entry["description"] = detail.description
+                entry["description"] = lf(detail.description)
             purpose = PURPOSES.get(detail.purpose or "")
             if purpose:
                 entry["purpose"] = purpose
@@ -306,7 +306,7 @@ class Importer:
         if user is None:
             return entry
         if user.detail.description:
-            entry["description"] = user.detail.description
+            entry["description"] = lf(user.detail.description)
         email = user.detail.notification_email_address.any
         if email:
             entry["notification_email"] = email
@@ -358,7 +358,7 @@ class Importer:
             d = pp.detail
             entry: dict[str, Any] = {"name": d.name}
             if d.description:
-                entry["description"] = d.description
+                entry["description"] = lf(d.description)
             if d.external is not None:
                 entry["external"] = {k: v for k, v in d.external.model_dump().items() if v is not None}
             elif d.internal is not None:
@@ -393,12 +393,14 @@ class Importer:
     def _write(self) -> None:
         for rel, content in sorted(self.files.items()):
             path = self.output / rel
+            # compare and write bytes: text mode would turn "\r\n" (kept from SignPath) into "\n"
+            data = content.encode("utf-8")
             if path.exists() and not self.force and not rel.startswith(f"{LIBRARY_DIR}/imported-"):
-                if path.read_text(encoding="utf-8") != content:
+                if path.read_bytes() != data:
                     self.report.skipped_files.append(rel)
                 continue
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(content, encoding="utf-8")
+            path.write_bytes(data)
             self.report.written.append(rel)
         report_path = self.output / "import-report.md"
         report_path.write_text(self.report.to_markdown(), encoding="utf-8")
