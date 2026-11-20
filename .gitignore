@@ -1,0 +1,23 @@
+# Local credentials for manual sandbox exploration (never commit, never use in tests)
+.sandbox_token
+.sandbox_org_id
+
+# APM dependencies
+apm_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# signpath-manager outputs that may contain secrets
+*.tokens.jsonl
