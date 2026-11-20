@@ -8,7 +8,7 @@ from sealform.config.desired import Principal
 from sealform.config.loader import load_config
 from sealform.diagnostics import Diagnostics
 
-from .conftest import MSI_XML, ConfigFactory, project_yaml
+from .conftest import DEFAULT_PROFILE, MSI_XML, ConfigFactory, project_yaml
 
 
 def _messages(diags: Diagnostics) -> list[str]:
@@ -412,3 +412,74 @@ def test_invalid_xml_file_is_reported_once(make_config: ConfigFactory) -> None:
     _, diags = load_config(root)
     xml_errors = [d for d in diags.errors if d.location and d.location.file.name == "jar.xml"]
     assert len(xml_errors) == 1
+
+
+RELEASE_TEMPLATE = """
+name: Release signing
+purpose: release
+certificate: release-cert
+trusted_build_system_verification: true
+origin_verification:
+  branches: ['**']
+"""
+
+
+def test_policy_template_with_overrides(make_config: ConfigFactory) -> None:
+    extra = (
+        "signing_policies:\n"
+        "  release-signing:\n"
+        "    extends: signing-policies/release.yaml\n"
+        "    origin_verification:\n"
+        "      branches: [main, 'v*']\n"
+    )
+    profile = DEFAULT_PROFILE.replace(
+        "  release-signing:\n    name: Release signing\n    purpose: release\n    certificate: release-cert\n"
+        "    trusted_build_system_verification: true\n    origin_verification:\n      branches: [main]\n",
+        "",
+    )
+    root = make_config(
+        {
+            "projects/tech.alpha.yaml": project_yaml(extra=extra),
+            "signing-policies/release.yaml": RELEASE_TEMPLATE,
+        },
+        profile=profile,
+    )
+    state, diags = load_config(root)
+    assert not diags.has_errors, _messages(diags)
+    assert state is not None
+    policy = state.projects["tech.alpha"].signing_policies["release-signing"]
+    assert policy.name == "Release signing"
+    assert policy.certificate == "release-cert"
+    assert policy.trusted_build_system_verification
+    assert policy.origin_verification is not None
+    assert policy.origin_verification.branches == ["main", "v*"]
+
+
+def test_policy_template_errors(make_config: ConfigFactory) -> None:
+    profile = DEFAULT_PROFILE + "  third:\n    extends: signing-policies/missing.yaml\n"
+    root = make_config(
+        {
+            "projects/tech.alpha.yaml": project_yaml(),
+            "projects/tech.beta.yaml": project_yaml("Beta", "beta-ci"),
+            "signing-policies/nested.yaml": "extends: signing-policies/other.yaml\ncertificate: c\n",
+            "signing-policies/typo.yaml": "certificate_slug: c\n",
+        },
+        profile=profile,
+    )
+    _, diags = load_config(root)
+    missing = [d for d in diags.errors if "template not found" in d.message]
+    assert len(missing) == 1  # one reference in the profile, reported once for both projects
+    assert missing[0].location is not None
+    assert missing[0].location.file.name == "standard.yaml"
+    assert missing[0].path == "signing_policies.third.extends"
+
+    extra = (
+        "signing_policies:\n"
+        "  test-signing: {extends: signing-policies/nested.yaml}\n"
+        "  release-signing: {extends: signing-policies/typo.yaml}\n"
+    )
+    root = make_config({"projects/tech.alpha.yaml": project_yaml(extra=extra)})
+    _, diags = load_config(root)
+    messages = _messages(diags)
+    assert any("cannot extend another template" in m and "nested.yaml" in m for m in messages), messages
+    assert any("typo.yaml" in m and "certificate_slug: unknown key" in m for m in messages), messages

@@ -22,5 +22,6 @@ Records are append-only: a changed decision gets a new ADR that supersedes the o
 | [0012](0012-read-the-api-token-from-environment-file-or-stdin-only.md) | Read the API token from environment, file or stdin only | accepted | 2026-11-20 |
 | [0013](0013-rename-the-project-to-sealform.md) | Rename the project to sealform | accepted | 2026-11-20 |
 | [0014](0014-reference-artifact-configuration-xml-by-file-path.md) | Reference artifact configuration XML by file path | accepted | 2026-11-20 |
+| [0015](0015-reuse-signing-policies-through-templates.md) | Reuse signing policies through templates | accepted | 2026-11-20 |
 
 <!-- adrlogstop -->

@@ -276,3 +276,31 @@ def test_reimport_with_crlf_xml_reports_nothing(make_config: ConfigFactory, tmp_
     assert b"\r\n" in xml_file.read_bytes()
     assert run_import(fake, out).skipped_files == []
     assert_round_trip(fake, out)
+
+
+def test_profile_with_policy_templates_minimizes(make_config: ConfigFactory, tmp_path: Path) -> None:
+    template = (
+        "name: Release signing\npurpose: release\ncertificate: release-cert\n"
+        "trusted_build_system_verification: true\norigin_verification:\n  branches: ['**']\n"
+    )
+    profile = (
+        "trusted_build_systems: [GitHub.com]\n"
+        "artifact_configurations:\n  default: {name: Default, file: artifact-configurations/jar.xml}\n"
+        "signing_policies:\n  release-signing: {extends: signing-policies/release.yaml}\n"
+    )
+    extra = "signing_policies:\n  release-signing:\n    origin_verification: {branches: [main, 'v*']}\n"
+    project = project_yaml(extra=extra).replace("[test-signing, release-signing]", "[release-signing]")
+    fake = standard_fake()
+    source = make_config(
+        {"projects/tech.alpha.yaml": project, "signing-policies/release.yaml": template}, profile=profile
+    )
+    converge(fake, source)
+    out = tmp_path / "imported"
+    for sub in ("profiles", "artifact-configurations", "signing-policies"):
+        shutil.copytree(source / sub, out / sub)
+    run_import(fake, out, profile="standard")
+    alpha = load_yaml_file(out / "projects/tech.alpha.yaml").data
+    assert alpha["signing_policies"] == {
+        "release-signing": {"origin_verification": {"branches": ["main", "v*"]}}
+    }
+    assert_round_trip(fake, out)

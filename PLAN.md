@@ -20,6 +20,9 @@ without a profile followed by a `plan` showing no change, and
 
 Changes made to the plan during implementation:
 
+* **Signing policy templates:** a policy entry can build on a template file with
+  `extends: <path>` and override single fields; templates sit below profile and project
+  values ([ADR-0015](docs/decisions/0015-reuse-signing-policies-through-templates.md)).
 * **`shared: <name>` references were dropped:** artifact configuration XML is referenced with
   `file: <path>` or inline `xml:`, and `import` reuses any existing XML file
   ([ADR-0014](docs/decisions/0014-reference-artifact-configuration-xml-by-file-path.md)).

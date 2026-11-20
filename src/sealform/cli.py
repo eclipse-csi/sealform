@@ -536,7 +536,7 @@ def import_(
     help="Write <kind>.schema.json files for all kinds into this directory.",
 )
 def schema(kind: str | None, output_dir: Path | None) -> None:
-    """Print the JSON Schema of a configuration file kind (organization, profile, project)."""
+    """Print the JSON Schema of a configuration file kind (organization, profile, project, signing-policy)."""
     if output_dir is not None:
         output_dir.mkdir(parents=True, exist_ok=True)
         for k in sorted(SCHEMAS):

@@ -20,12 +20,13 @@ from sealform.config.desired import (
     Principal,
     Unmanaged,
 )
-from sealform.config.merge import drop_nulls, merge_profile
+from sealform.config.merge import TemplateLoader, drop_nulls, merge_profile
 from sealform.config.model import (
     SLUG_RE,
     OrganizationSpec,
     ProfileSpec,
     ProjectSpec,
+    SigningPolicySpec,
 )
 from sealform.config.xml import validate_xml
 from sealform.config.yamlio import YamlDocument, YamlLoadError, dump_yaml, load_yaml_file, safe_load
@@ -106,6 +107,57 @@ class XmlFiles:
                     self.diags.error(problem, Location(path))
             self._texts[path] = text
         return path, self._texts[path]
+
+
+class PolicyTemplates:
+    """Signing policy templates (ADR-0015), each read and validated once."""
+
+    def __init__(self, root: Path, diags: Diagnostics) -> None:
+        self.root = root
+        self.diags = diags
+        self._cache: dict[Path, dict[str, Any] | None] = {}
+        self._reported: set[str] = set()
+
+    def get(self, relative: str) -> tuple[dict[str, Any] | None, str | None]:
+        """Return (content, problem with the reference)."""
+        path = _within_root(self.root, relative)
+        if path is None or not path.is_file():
+            return None, f"signing policy template not found inside the configuration root: {relative}"
+        if path not in self._cache:
+            self._cache[path] = self._load(path)
+        return self._cache[path], None
+
+    def _load(self, path: Path) -> dict[str, Any] | None:
+        try:
+            doc = load_yaml_file(path)
+        except YamlLoadError as e:
+            self.diags.error(e.message, e.location)
+            return None
+        if isinstance(doc.data, dict) and "extends" in doc.data:
+            self.diags.error(
+                "a signing policy template cannot extend another template",
+                doc.locate(("extends",)),
+                "extends",
+            )
+            return None
+        if _validate_model(SigningPolicySpec, doc, self.diags) is None:
+            return None
+        data: dict[str, Any] = drop_nulls(doc.data or {})
+        return data
+
+    def loader(self, project_doc: YamlDocument, profile_doc: YamlDocument | None) -> TemplateLoader:
+        def load(relative: str, layer: str, policy: str) -> dict[str, Any] | None:
+            content, problem = self.get(relative)
+            if problem is not None:
+                doc = profile_doc if layer == "profile" and profile_doc is not None else project_doc
+                path = ("signing_policies", policy, "extends")
+                location = doc.locate(path)
+                if str(location) not in self._reported:
+                    self._reported.add(str(location))
+                    self.diags.error(problem, location, _dotted(path))
+            return content
+
+        return load
 
 
 def _load_pipeline_policies(
@@ -439,6 +491,7 @@ def load_config(
         )
 
     xml_files = XmlFiles(root, diags)
+    templates = PolicyTemplates(root, diags)
     pipeline_policies = _load_pipeline_policies(root, org, org_doc, diags)
 
     # projects
@@ -495,7 +548,9 @@ def load_config(
             if profile_doc is None:
                 diags.error(f"unknown profile '{profile_name}'", doc.locate(("profile",)))
                 continue
-        merged = merge_profile(profile_doc.data if profile_doc else None, data)
+        merged = merge_profile(
+            profile_doc.data if profile_doc else None, data, templates=templates.loader(doc, profile_doc)
+        )
         spec = _validate_model(ProjectSpec, doc, diags, data=merged)
         if spec is None:
             continue

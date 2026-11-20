@@ -1,0 +1,214 @@
+{
+  "$defs": {
+    "ApprovalSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "approvers": {
+          "items": {
+            "description": "A user email (alice@example.org) or a group reference (group:<name>).",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Approvers",
+          "type": "array"
+        },
+        "required": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Required",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "approvers"
+      ],
+      "title": "ApprovalSpec",
+      "type": "object"
+    },
+    "OriginVerificationSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "branches": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Allowed branch names or patterns, e.g. main, release/*.",
+          "title": "Branches"
+        },
+        "build_definitions": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Allowed build definitions, e.g. .github/workflows/release.yml.",
+          "title": "Build Definitions"
+        }
+      },
+      "title": "OriginVerificationSpec",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "extends": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Path (relative to the configuration root) of the signing policy template to build on.",
+      "title": "Extends"
+    },
+    "name": {
+      "anyOf": [
+        {
+          "maxLength": 100,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Display name; defaults to the slug.",
+      "title": "Name"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "maxLength": 5000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Description"
+    },
+    "purpose": {
+      "anyOf": [
+        {
+          "enum": [
+            "test",
+            "release"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Purpose"
+    },
+    "certificate": {
+      "anyOf": [
+        {
+          "description": "Identifier: ASCII letters, digits, '.', '-' and '_' (case-insensitive).",
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9._-]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Slug of the certificate (not managed).",
+      "title": "Certificate"
+    },
+    "submitters": {
+      "description": "Additional submitters; the project's own CI users attach via ci_users.",
+      "items": {
+        "description": "A user email, 'group:<name>', or 'ci:<name>' for a CI user not owned by this project.",
+        "type": "string"
+      },
+      "title": "Submitters",
+      "type": "array"
+    },
+    "approval": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ApprovalSpec"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "trusted_build_system_verification": {
+      "default": false,
+      "title": "Trusted Build System Verification",
+      "type": "boolean"
+    },
+    "origin_verification": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/OriginVerificationSpec"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "pipeline_policies": {
+      "patternProperties": {
+        "^[A-Za-z0-9._-]+$": {
+          "enum": [
+            "log",
+            "enforce"
+          ],
+          "type": "string"
+        }
+      },
+      "propertyNames": {
+        "description": "Identifier: ASCII letters, digits, '.', '-' and '_' (case-insensitive).",
+        "maxLength": 100,
+        "minLength": 1
+      },
+      "title": "Pipeline Policies",
+      "type": "object"
+    },
+    "disable_malware_scanning": {
+      "default": false,
+      "title": "Disable Malware Scanning",
+      "type": "boolean"
+    },
+    "active": {
+      "default": true,
+      "title": "Active",
+      "type": "boolean"
+    }
+  },
+  "title": "sealform signing policy template (signing-policies/<name>.yaml)",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

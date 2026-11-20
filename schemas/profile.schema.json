@@ -135,6 +135,19 @@
     "SigningPolicySpec": {
       "additionalProperties": false,
       "properties": {
+        "extends": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Path (relative to the configuration root) of the signing policy template to build on.",
+          "title": "Extends"
+        },
         "name": {
           "anyOf": [
             {

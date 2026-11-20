@@ -13,11 +13,4 @@ signing_policies:
     origin_verification:
       branches: ['*']
   release-signing:
-    name: Release signing
-    purpose: release
-    certificate: release-certificate
-    trusted_build_system_verification: true
-    origin_verification:
-      branches: [main, 'release/*']
-    pipeline_policies:
-      github-hosted-runners: enforce
+    extends: signing-policies/release.yaml

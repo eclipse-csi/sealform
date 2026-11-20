@@ -9,10 +9,11 @@ A configuration root describes one SignPath organization:
 ├── artifact-configurations/   # convention: XML used by several projects, referenced with `file:`
 │   └── custom/                # convention: project-specific XML files
 ├── pipeline-policies/         # optional: pipeline policy definitions referenced by file
+├── signing-policies/          # convention: signing policy templates, referenced with `extends:`
 └── projects/<slug>.yaml       # one file per project; the file name is the project slug
 ```
 
-File references (`file:`, `definition_file:`) are relative to the root and cannot leave it.
+File references (`file:`, `definition_file:`, `extends:`) are relative to the root and cannot leave it.
 Slugs use ASCII letters, digits, `.`, `-` and `_`, and are compared case-insensitively, like SignPath does.
 JSON Schemas for editor completion are in [schemas/](../schemas); add a
 `# yaml-language-server: $schema=...` comment at the top of a file to use them.
@@ -90,6 +91,7 @@ ci_users:                                    # CI users owned by this project (n
 
 signing_policies:
   release-signing:
+    extends: signing-policies/release.yaml   # optional template, see below
     name: Release signing                    # defaults to the slug
     description: optional
     purpose: release                         # test | release; must match the certificate's purpose
@@ -149,6 +151,35 @@ Merge rules ([ADR-0003](decisions/0003-share-project-defaults-through-organizati
 * the source keys of an artifact configuration (`file`, `xml`) replace each other as a group.
 
 `plan` shows the resolved values, so the effect of a profile change on every project is visible before applying it.
+
+## Signing policy templates
+
+A template is a file holding one signing policy, with the same keys as a `signing_policies` entry except `extends`
+([ADR-0015](decisions/0015-reuse-signing-policies-through-templates.md)).
+Any signing policy entry, in a profile or a project, builds on it with `extends: <path>` and overrides what differs:
+
+```yaml
+# signing-policies/release.yaml
+name: Release signing
+purpose: release
+certificate: codesigning-eclipse-foundation-release
+trusted_build_system_verification: true
+origin_verification:
+  branches: ['**']
+
+# projects/dt.esmf.yaml
+signing_policies:
+  release-signing:
+    extends: signing-policies/release.yaml
+    origin_verification:
+      branches: [main, 'v*']    # replaces the template's branches; everything else is inherited
+```
+
+The effective policy is the template, overridden by the profile's entry, overridden by the project's entry, with the
+merge rules above, so a project can also override or remove (`null`) values that come from a template its profile uses.
+The template is the one named by the project's `extends` if it has one, otherwise the profile's;
+`extends: null` in a project drops the profile's template.
+Templates cannot extend other templates. Each template is validated once, with errors located in the template file.
 
 ## Artifact configuration XML
 

@@ -13,11 +13,12 @@ from pathlib import Path
 from typing import Any
 
 from sealform.api.models import Participant
-from sealform.config.loader import LIBRARY_DIR, ORGANIZATION_FILE, PROFILES_DIR, PROJECTS_DIR
+from sealform.config.loader import LIBRARY_DIR, ORGANIZATION_FILE, PROFILES_DIR, PROJECTS_DIR, PolicyTemplates
 from sealform.config.merge import merge_profile
 from sealform.config.model import SLUG_RE, ProjectSpec
 from sealform.config.xml import stored_form
 from sealform.config.yamlio import dump_yaml, lf, load_yaml_file
+from sealform.diagnostics import Diagnostics
 from sealform.live.state import LiveCIUser, LiveProject, LiveState
 from sealform.plan.diff import PURPOSES, comparable_policy
 
@@ -337,14 +338,23 @@ class Importer:
             if self.default_profile is not None:
                 return {"profile": None, **full}
             return full
-        minimized = _diff_against(full, profile)
+        templates = PolicyTemplates(self.output, Diagnostics())
+
+        def load(relative: str, _layer: str, _policy: str) -> dict[str, Any] | None:
+            return templates.get(relative)[0]
+
+        def merged(project: dict[str, Any]) -> dict[str, Any]:
+            return merge_profile(profile, project, templates=load)
+
+        # compare with what the profile provides once its signing policy templates are applied
+        minimized = _diff_against(full, merged({}))
         if "default_artifact_configuration" in minimized:
             implicit = {k: v for k, v in minimized.items() if k != "default_artifact_configuration"}
             with contextlib.suppress(Exception):  # unusual combination: keep the explicit default
-                if _effective(merge_profile(profile, implicit)) == _effective(full):
+                if _effective(merged(implicit)) == _effective(full):
                     minimized = implicit
         try:
-            same = _effective(merge_profile(profile, minimized)) == _effective(full)
+            same = _effective(merged(minimized)) == _effective(full)
         except Exception:  # validation of an unusual combination: keep the full document
             same = False
         header: dict[str, Any] = {}

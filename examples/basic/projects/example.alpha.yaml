@@ -14,3 +14,5 @@ signing_policies:
     approval:
       approvers: [alice@example.org, group:Alpha leads]
       required: 1
+    origin_verification:
+      branches: [main, 'v*']   # replaces the template's branches; the rest of the template applies

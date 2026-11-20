@@ -155,6 +155,10 @@ class OriginVerificationSpec(_Strict):
 
 
 class SigningPolicySpec(_Strict):
+    extends: str | None = Field(
+        default=None,
+        description="Path (relative to the configuration root) of the signing policy template to build on.",
+    )
     name: Name | None = Field(default=None, description="Display name; defaults to the slug.")
     description: Description | None = None
     purpose: Literal["test", "release"] | None = None

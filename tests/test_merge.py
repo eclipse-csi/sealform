@@ -58,3 +58,69 @@ def test_profile_key_is_dropped_and_inputs_untouched() -> None:
 
 def test_no_profile() -> None:
     assert merge_profile(None, {"name": "A", "description": None}) == {"name": "A"}
+
+
+TEMPLATES = {
+    "t/release.yaml": {
+        "purpose": "release",
+        "certificate": "rel",
+        "trusted_build_system_verification": True,
+        "origin_verification": {"branches": ["**"], "build_definitions": ["release.yml"]},
+    },
+    "t/test.yaml": {"purpose": "test", "certificate": "tst"},
+}
+
+
+def load(path: str, _layer: str, _policy: str) -> dict[str, object] | None:
+    return TEMPLATES.get(path)
+
+
+def test_template_is_the_bottom_layer() -> None:
+    project = {
+        "signing_policies": {
+            "release": {"extends": "t/release.yaml", "origin_verification": {"branches": ["main", "v*"]}}
+        }
+    }
+    policy = merge_profile(None, project, templates=load)["signing_policies"]["release"]
+    assert policy == {
+        "purpose": "release",
+        "certificate": "rel",
+        "trusted_build_system_verification": True,
+        "origin_verification": {"branches": ["main", "v*"], "build_definitions": ["release.yml"]},
+    }
+
+
+def test_template_from_profile_then_profile_then_project() -> None:
+    profile = {"signing_policies": {"release": {"extends": "t/release.yaml", "description": "from profile"}}}
+    project = {"signing_policies": {"release": {"origin_verification": {"branches": ["main"]}}}}
+    policy = merge_profile(profile, project, templates=load)["signing_policies"]["release"]
+    assert policy["description"] == "from profile"
+    assert policy["certificate"] == "rel"
+    assert policy["origin_verification"]["branches"] == ["main"]
+
+
+def test_project_can_switch_template_and_keep_profile_overrides() -> None:
+    profile = {"signing_policies": {"release": {"extends": "t/release.yaml", "description": "from profile"}}}
+    project = {"signing_policies": {"release": {"extends": "t/test.yaml"}}}
+    policy = merge_profile(profile, project, templates=load)["signing_policies"]["release"]
+    assert policy == {"purpose": "test", "certificate": "tst", "description": "from profile"}
+
+
+def test_nulls_remove_template_values_and_extends_null_drops_the_template() -> None:
+    profile = {"signing_policies": {"release": {"extends": "t/release.yaml"}}}
+    project = {"signing_policies": {"release": {"origin_verification": None}}}
+    policy = merge_profile(profile, project, templates=load)["signing_policies"]["release"]
+    assert "origin_verification" not in policy
+    assert policy["certificate"] == "rel"
+    project = {"signing_policies": {"release": {"extends": None, "certificate": "own"}}}
+    assert merge_profile(profile, project, templates=load)["signing_policies"]["release"] == {
+        "certificate": "own"
+    }
+
+
+def test_policies_without_project_entries_are_resolved() -> None:
+    profile = {"signing_policies": {"release": {"extends": "t/release.yaml"}, "plain": {"certificate": "c"}}}
+    merged = merge_profile(profile, {"name": "A"}, templates=load)
+    assert merged["signing_policies"]["release"]["certificate"] == "rel"
+    assert merged["signing_policies"]["plain"] == {"certificate": "c"}
+    assert merge_profile(profile, {"signing_policies": None}, templates=load).get("signing_policies") is None

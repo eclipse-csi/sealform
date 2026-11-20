@@ -6,12 +6,13 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from sealform.config.model import OrganizationSpec, ProfileSpec, ProjectSpec
+from sealform.config.model import OrganizationSpec, ProfileSpec, ProjectSpec, SigningPolicySpec
 
 SCHEMAS: dict[str, tuple[type[BaseModel], str]] = {
     "organization": (OrganizationSpec, "sealform organization.yaml"),
     "profile": (ProfileSpec, "sealform profile (profiles/<name>.yaml)"),
     "project": (ProjectSpec, "sealform project (projects/<slug>.yaml)"),
+    "signing-policy": (SigningPolicySpec, "sealform signing policy template (signing-policies/<name>.yaml)"),
 }
 
 

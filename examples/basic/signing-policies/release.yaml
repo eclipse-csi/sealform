@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../../schemas/signing-policy.schema.json
+# Signing policy template: profiles and projects build on it with
+#   extends: signing-policies/release.yaml
+# and override what differs (maps merge, lists replace, null removes).
+name: Release signing
+purpose: release
+certificate: release-certificate
+trusted_build_system_verification: true
+origin_verification:
+  branches: [main, 'release/*']
+pipeline_policies:
+  github-hosted-runners: enforce
