@@ -62,7 +62,9 @@ def test_round_trip_without_profile(make_config: ConfigFactory, tmp_path: Path) 
     assert_round_trip(fake, out)
 
 
-def test_shared_xml_goes_to_the_library(make_config: ConfigFactory, tmp_path: Path) -> None:
+def test_xml_used_by_several_projects_goes_to_a_common_file(
+    make_config: ConfigFactory, tmp_path: Path
+) -> None:
     fake = standard_fake()
     source = make_config(
         {
@@ -73,11 +75,48 @@ def test_shared_xml_goes_to_the_library(make_config: ConfigFactory, tmp_path: Pa
     converge(fake, source)
     out = tmp_path / "imported"
     run_import(fake, out)
-    library = list((out / "artifact-configurations").glob("imported-*.xml"))
-    assert len(library) == 1
-    assert library[0].read_text() == JAR_XML
+    common = out / "artifact-configurations/default.xml"  # named after the artifact configuration slug
+    assert common.read_text() == JAR_XML
+    for name in ("alpha", "beta"):
+        project = load_yaml_file(out / f"projects/tech.{name}.yaml").data
+        assert project["artifact_configurations"]["default"] == {
+            "name": "Default",
+            "file": "artifact-configurations/default.xml",
+        }
+    assert_round_trip(fake, out)
+
+
+def test_common_file_name_falls_back_to_a_hash(make_config: ConfigFactory, tmp_path: Path) -> None:
+    fake = standard_fake()
+    source = make_config(
+        {
+            "projects/tech.alpha.yaml": project_yaml(),
+            "projects/tech.beta.yaml": project_yaml("Beta", "beta-ci"),
+        }
+    )
+    converge(fake, source)
+    out = tmp_path / "imported"
+    (out / "artifact-configurations").mkdir(parents=True)
+    (out / "artifact-configurations/default.xml").write_text(MSI_XML)  # taken, different content
+    run_import(fake, out)
     alpha = load_yaml_file(out / "projects/tech.alpha.yaml").data
-    assert alpha["artifact_configurations"]["default"] == {"name": "Default", "shared": library[0].stem}
+    reference = alpha["artifact_configurations"]["default"]["file"]
+    assert reference.startswith("artifact-configurations/imported-")
+    assert (out / "artifact-configurations/default.xml").read_text() == MSI_XML
+    assert_round_trip(fake, out)
+
+
+def test_existing_file_anywhere_is_reused(make_config: ConfigFactory, tmp_path: Path) -> None:
+    fake = standard_fake()
+    source = make_config({"projects/tech.alpha.yaml": project_yaml()})
+    converge(fake, source)
+    out = tmp_path / "imported"
+    (out / "artifact-configurations/java").mkdir(parents=True)
+    (out / "artifact-configurations/java/jar.xml").write_text(JAR_XML.replace("\n", "\r\n"))
+    run_import(fake, out)
+    alpha = load_yaml_file(out / "projects/tech.alpha.yaml").data
+    assert alpha["artifact_configurations"]["default"]["file"] == "artifact-configurations/java/jar.xml"
+    assert not (out / "artifact-configurations/custom").exists()
     assert_round_trip(fake, out)
 
 

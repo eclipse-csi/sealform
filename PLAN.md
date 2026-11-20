@@ -20,6 +20,9 @@ without a profile followed by a `plan` showing no change, and
 
 Changes made to the plan during implementation:
 
+* **`shared: <name>` references were dropped:** artifact configuration XML is referenced with
+  `file: <path>` or inline `xml:`, and `import` reuses any existing XML file
+  ([ADR-0014](docs/decisions/0014-reference-artifact-configuration-xml-by-file-path.md)).
 * **The project was renamed from `signpath-manager` to `sealform`** so that its name does not suggest
   an endorsement by SignPath ([ADR-0013](docs/decisions/0013-rename-the-project-to-sealform.md)).
 * **API models are hand-written and lenient** rather than generated, because real
@@ -57,7 +60,7 @@ Each structural decision has an ADR in [docs/decisions](docs/decisions/README.md
 | Config format | YAML. One config root = one SignPath organization. One file per project. |
 | Organization ID | Declared once in `organization.yaml`. Never in project files. |
 | Policy defaults | Org-level **profiles**. A project inherits the default profile and overrides fields. |
-| Artifact config XML | Shared library of XML files referenced by name. Per-project custom XML (inline or file) is allowed. |
+| Artifact config XML | XML files referenced by path (`file:`), or inline `xml:`. Files used by several projects live in `artifact-configurations/` by convention ([ADR-0014](docs/decisions/0014-reference-artifact-configuration-xml-by-file-path.md)). |
 | Interactive users and groups | **Reference only.** Must already exist. Resolved to IDs by email or group name. Never created. |
 | Pipeline policies | **Managed** (org-level, in `organization.yaml`). |
 | Trusted build systems | **Reference only.** Linked to projects by slug. Never created or edited. |
@@ -121,7 +124,7 @@ From `https://app.signpath.io/Api/swagger/v1/swagger.json` (OpenAPI 3.0.4) and d
 ├── organization.yaml                 # org ID, default profile, pipeline policies, unmanaged lists
 ├── profiles/
 │   └── standard.yaml                 # one file per profile
-├── artifact-configurations/          # shared XML library; file name = reference name
+├── artifact-configurations/          # XML used by several projects (convention), referenced with file:
 │   ├── jar-signing.xml
 │   ├── windows-exe.xml
 │   └── custom/                       # convention for project-specific XML files
@@ -175,7 +178,7 @@ trusted_build_systems: [github.com]         # slugs, linked to every project usi
 artifact_configurations:
   default:
     name: Default
-    shared: jar-signing                     # artifact-configurations/jar-signing.xml
+    file: artifact-configurations/jar-signing.xml
 default_artifact_configuration: default
 signing_policies:
   test-signing:
@@ -246,7 +249,7 @@ signing_policies:
   * Maps are deep-merged by key.
   * Scalars and lists are replaced, never concatenated.
   * `~` removes an inherited map entry.
-  * An artifact config's source keys (`shared`, `file`, `xml`) replace each other as
+  * An artifact config's source keys (`file`, `xml`) replace each other as
     a group. Exactly one must be set after the merge.
 * **Principal references:**
   * A bare email is an interactive user, matched on `accountEmailAddress`,
@@ -319,7 +322,7 @@ Commands:
    * Merge profiles.
    * Load XML and validate it against the vendored `artifact-configuration/v1.xsd`.
    * Check internal references: policy names in `ci_users`, pipeline-policy slugs,
-     library names.
+     XML file references.
    * Produce a fully explicit `DesiredState`.
 2. **Fetch live state, scoped and concurrent (httpx async, bounded semaphore, retries
    with backoff on 429 and 5xx).**
@@ -482,7 +485,7 @@ Probe objects in the sandbox are prefixed `spm-probe-`.
 | --- | --- |
 | `POST CIUsers` response | `201`, body `{"userId", "apiToken"}`, `Location` header. |
 | Initial artifact config of a new project | Slug `initial`, name "Initial version", default. |
-| Is XML normalized? | No. Stored and returned byte for byte (comments and whitespace kept), so the diff compares text ([ADR-0004](docs/decisions/0004-share-artifact-configuration-xml-through-a-library-and-compare-it-verbatim.md)). |
+| Is XML normalized? | No. Stored and returned byte for byte (comments and whitespace kept), so the diff compares text ([ADR-0014](docs/decisions/0014-reference-artifact-configuration-xml-by-file-path.md)). |
 | XML validation | Server-side XSD validation with precise messages. The XSD lists more file types than the docs. |
 | Slug lookups | Case-insensitive, and slugs are unique case-insensitively. |
 | CI user names | Must be unique among **active** users; deactivated users free the name. |

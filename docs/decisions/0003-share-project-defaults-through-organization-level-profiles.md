@@ -33,7 +33,7 @@ Merge rules:
 * maps are merged deeply by key;
 * scalars and lists replace the inherited value, they are never concatenated;
 * `null` removes an inherited map entry (for example `signing_policies: {test-signing: null}`);
-* the source keys of an artifact configuration (`shared`, `file`, `xml`) replace each other as a group.
+* the source keys of an artifact configuration (`file`, `xml`; originally also `shared`, see [ADR-0014](0014-reference-artifact-configuration-xml-by-file-path.md)) replace each other as a group.
 
 ### Consequences
 

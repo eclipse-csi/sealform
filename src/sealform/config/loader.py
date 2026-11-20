@@ -82,25 +82,30 @@ def _within_root(root: Path, relative: str) -> Path | None:
     return candidate
 
 
-def load_library(root: Path, diags: Diagnostics) -> dict[str, str]:
-    library: dict[str, str] = {}
-    lib_dir = root / LIBRARY_DIR
-    if not lib_dir.is_dir():
-        return library
-    for path in sorted(lib_dir.glob("*.xml")):
-        name = path.stem
-        if not SLUG_RE.match(name):
-            diags.error("library file name must be a valid slug", Location(path))
-            continue
-        try:
-            text = path.read_text(encoding="utf-8-sig")
-        except OSError as e:
-            diags.error(f"cannot read file: {e.strerror}", Location(path))
-            continue
-        for problem in validate_xml(text):
-            diags.error(problem, Location(path))
-        library[name] = text
-    return library
+class XmlFiles:
+    """Artifact configuration XML files, each read and validated once however many projects use it."""
+
+    def __init__(self, root: Path, diags: Diagnostics) -> None:
+        self.root = root
+        self.diags = diags
+        self._texts: dict[Path, str | None] = {}
+
+    def get(self, relative: str) -> tuple[Path | None, str | None]:
+        """Return (path, text); path is None when the file is missing or outside the root."""
+        path = _within_root(self.root, relative)
+        if path is None or not path.is_file():
+            return None, None
+        if path not in self._texts:
+            try:
+                text: str | None = path.read_text(encoding="utf-8-sig")
+            except OSError as e:
+                self.diags.error(f"cannot read file: {e.strerror}", Location(path))
+                text = None
+            if text is not None:
+                for problem in validate_xml(text):
+                    self.diags.error(problem, Location(path))
+            self._texts[path] = text
+        return path, self._texts[path]
 
 
 def _load_pipeline_policies(
@@ -152,13 +157,13 @@ class _ProjectBuilder:
         root: Path,
         doc: YamlDocument,
         profile_doc: YamlDocument | None,
-        library: dict[str, str],
+        xml_files: XmlFiles,
         diags: Diagnostics,
     ) -> None:
         self.root = root
         self.doc = doc
         self.profile_doc = profile_doc
-        self.library = library
+        self.xml_files = xml_files
         self.diags = diags
 
     def loc(self, *path: str | int) -> Location:
@@ -201,30 +206,16 @@ class _ProjectBuilder:
                     ac_slug,
                 )
                 continue
-            sources = [s for s in ("shared", "file", "xml") if getattr(ac, s) is not None]
+            sources = [s for s in ("file", "xml") if getattr(ac, s) is not None]
             if len(sources) != 1:
-                self.error(
-                    "exactly one of 'shared', 'file' or 'xml' is required", "artifact_configurations", ac_slug
-                )
+                self.error("exactly one of 'file' or 'xml' is required", "artifact_configurations", ac_slug)
                 continue
             xml_text: str | None = None
             source = ""
-            if ac.shared is not None:
-                source = f"shared:{ac.shared}"
-                xml_text = self.library.get(ac.shared)
-                if xml_text is None:
-                    self.error(
-                        f"no shared artifact configuration '{ac.shared}' "
-                        f"(expected {LIBRARY_DIR}/{ac.shared}.xml)",
-                        "artifact_configurations",
-                        ac_slug,
-                        "shared",
-                    )
-                    continue
-            elif ac.file is not None:
+            if ac.file is not None:
                 source = f"file:{ac.file}"
-                path = _within_root(self.root, ac.file)
-                if path is None or not path.is_file():
+                path, xml_text = self.xml_files.get(ac.file)
+                if path is None:
                     self.error(
                         f"file not found inside the configuration root: {ac.file}",
                         "artifact_configurations",
@@ -232,9 +223,8 @@ class _ProjectBuilder:
                         "file",
                     )
                     continue
-                xml_text = path.read_text(encoding="utf-8-sig")
-                for problem in validate_xml(xml_text):
-                    self.diags.error(problem, Location(path))
+                if xml_text is None:
+                    continue
             else:
                 source = "inline"
                 xml_text = ac.xml or ""
@@ -448,7 +438,7 @@ def load_config(
             org_doc.locate(("default_profile",)),
         )
 
-    library = load_library(root, diags)
+    xml_files = XmlFiles(root, diags)
     pipeline_policies = _load_pipeline_policies(root, org, org_doc, diags)
 
     # projects
@@ -509,7 +499,7 @@ def load_config(
         spec = _validate_model(ProjectSpec, doc, diags, data=merged)
         if spec is None:
             continue
-        builder = _ProjectBuilder(root, doc, profile_doc, library, diags)
+        builder = _ProjectBuilder(root, doc, profile_doc, xml_files, diags)
         project = builder.build(slug, spec, profile_name)
         if project is None:
             continue
@@ -574,7 +564,6 @@ def load_config(
         projects=desired_projects,
         pipeline_policies=pipeline_policies,
         unmanaged=unmanaged,
-        library=library,
         profiles={name: (d.data or {}) for name, d in profile_docs.items()},
     )
     return state, diags

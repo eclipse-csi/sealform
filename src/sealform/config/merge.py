@@ -4,7 +4,7 @@ Rules:
 * maps merge deeply by key;
 * scalars and lists replace the inherited value;
 * ``null`` removes an inherited map entry;
-* the source keys of an artifact configuration (shared, file, xml) replace each other as a group.
+* the source keys of an artifact configuration (file, xml) replace each other as a group.
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ from __future__ import annotations
 import copy
 from typing import Any
 
-AC_SOURCE_KEYS = ("shared", "file", "xml")
+AC_SOURCE_KEYS = ("file", "xml")
 
 
 def _merge(base: Any, override: Any, path: tuple[str, ...]) -> Any:

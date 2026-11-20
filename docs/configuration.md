@@ -6,8 +6,8 @@ A configuration root describes one SignPath organization:
 <root>/
 ├── organization.yaml          # organization ID, default profile, pipeline policies, unmanaged objects
 ├── profiles/<name>.yaml       # shared project defaults
-├── artifact-configurations/   # shared XML library: <name>.xml is referenced as `shared: <name>`
-│   └── custom/                # convention for project-specific XML files
+├── artifact-configurations/   # convention: XML used by several projects, referenced with `file:`
+│   └── custom/                # convention: project-specific XML files
 ├── pipeline-policies/         # optional: pipeline policy definitions referenced by file
 └── projects/<slug>.yaml       # one file per project; the file name is the project slug
 ```
@@ -71,7 +71,7 @@ artifact_configurations:
   default:
     name: Default                            # defaults to the slug
     description: optional
-    shared: jar-signing                      # artifact-configurations/jar-signing.xml
+    file: artifact-configurations/jar-signing.xml   # any XML file inside the configuration root
   installer:
     file: artifact-configurations/custom/example.alpha-installer.xml
   inline:
@@ -146,7 +146,7 @@ Merge rules ([ADR-0003](decisions/0003-share-project-defaults-through-organizati
 * maps merge deeply by key;
 * lists and scalars from the project replace the inherited value;
 * `null` removes an inherited entry, at any depth (`test-signing: null`, `origin_verification: null`, `pipeline_policies: {gh: null}`);
-* the source keys of an artifact configuration (`shared`, `file`, `xml`) replace each other as a group.
+* the source keys of an artifact configuration (`file`, `xml`) replace each other as a group.
 
 `plan` shows the resolved values, so the effect of a profile change on every project is visible before applying it.
 
@@ -156,3 +156,5 @@ SignPath stores the XML exactly as sent, except that a document without an XML d
 `<?xml version="1.0" encoding="utf-8"?>` prepended.
 The tool compares XML the same way, so comment and whitespace changes are applied and shown as a diff.
 Use SignPath's own `<parameters>` and `${name}` substitution for per-request variations rather than copying XML.
+Several projects can reference the same file: each file is validated once, and `plan` lists every project a change
+to it affects.

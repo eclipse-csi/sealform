@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by ADR-0014
 date: 2026-11-20
 ---
 
@@ -52,3 +52,7 @@ Round-trip tests: `import` followed by `plan` reports no change.
 
 * Good, because projects could vary small parts of a shared XML.
 * Bad, because it duplicates SignPath's own parameter mechanism and hides the XML actually stored.
+
+## More Information
+
+Superseded by [ADR-0014](0014-reference-artifact-configuration-xml-by-file-path.md), which drops `shared:` references in favor of `file:` and keeps the comparison rule.

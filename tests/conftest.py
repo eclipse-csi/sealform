@@ -33,7 +33,7 @@ trusted_build_systems: [GitHub.com]
 artifact_configurations:
   default:
     name: Default
-    shared: jar
+    file: artifact-configurations/jar.xml
 signing_policies:
   test-signing:
     name: Test signing

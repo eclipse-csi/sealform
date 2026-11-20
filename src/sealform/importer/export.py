@@ -91,7 +91,7 @@ class Importer:
         self.full_scope = full_scope
         self.report = ImportReport()
         self.files: dict[str, str] = {}  # relative path -> content
-        self.library: dict[str, str] = {}  # stored-form xml -> library name
+        self.xml_files: dict[str, str] = {}  # stored-form xml -> path relative to the output
         self.profile_data: dict[str, Any] | None = None
         self.default_profile: str | None = None
         self.org_exists = (output / ORGANIZATION_FILE).is_file()
@@ -101,8 +101,10 @@ class Importer:
     def _load_existing(self) -> None:
         lib_dir = self.output / LIBRARY_DIR
         if lib_dir.is_dir():
-            for path in sorted(lib_dir.glob("*.xml")):
-                self.library.setdefault(_xml_key(path.read_text(encoding="utf-8-sig")), path.stem)
+            # reuse any XML file already in the configuration, preferring the shallowest one
+            for path in sorted(lib_dir.rglob("*.xml"), key=lambda p: (len(p.parts), str(p))):
+                rel = path.relative_to(self.output).as_posix()
+                self.xml_files.setdefault(_xml_key(path.read_text(encoding="utf-8-sig")), rel)
         if self.org_exists:
             data = load_yaml_file(self.output / ORGANIZATION_FILE).data or {}
             self.default_profile = data.get("default_profile")
@@ -190,17 +192,29 @@ class Importer:
                 )
         return owners
 
+    def _free(self, rel: str) -> bool:
+        return rel not in self.files and not (self.output / rel).exists()
+
     def _xml_source(self, lp: LiveProject, ac_slug: str, xml: str, usage: dict[str, int]) -> dict[str, str]:
+        """Where the XML of an artifact configuration goes, as a `file:` reference.
+
+        1. an existing file with the same XML (as compared by `plan`) is reused;
+        2. XML used by several artifact configurations goes to one common file, named after
+           the artifact configuration slug when that name is free;
+        3. anything else goes to artifact-configurations/custom/<project>.<slug>.xml.
+        """
         key = _xml_key(xml)
-        name = self.library.get(key)
-        if name is None and usage[key] > 1:
-            name = f"imported-{_short_hash(key)}"
-            self.library[key] = name
-            self.files[f"{LIBRARY_DIR}/{name}.xml"] = xml if xml.endswith("\n") else xml + "\n"
-        if name is not None:
-            return {"shared": name}
-        rel = f"{CUSTOM_DIR}/{_safe_name(lp.slug, ac_slug)}.xml"
-        self.files[rel] = xml if xml.endswith("\n") else xml + "\n"
+        content = xml if xml.endswith("\n") else xml + "\n"
+        rel = self.xml_files.get(key)
+        if rel is None:
+            if usage[key] > 1:
+                rel = f"{LIBRARY_DIR}/{_safe_name(ac_slug)}.xml"
+                if not self._free(rel):
+                    rel = f"{LIBRARY_DIR}/imported-{_short_hash(key)}.xml"
+            else:
+                rel = f"{CUSTOM_DIR}/{_safe_name(lp.slug, ac_slug)}.xml"
+            self.xml_files[key] = rel
+            self.files[rel] = content
         return {"file": rel}
 
     def _project(self, lp: LiveProject, usage: dict[str, int], owners: dict[str, str]) -> None:
@@ -395,7 +409,7 @@ class Importer:
             path = self.output / rel
             # compare and write bytes: text mode would turn "\r\n" (kept from SignPath) into "\n"
             data = content.encode("utf-8")
-            if path.exists() and not self.force and not rel.startswith(f"{LIBRARY_DIR}/imported-"):
+            if path.exists() and not self.force:
                 if path.read_bytes() != data:
                     self.report.skipped_files.append(rel)
                 continue
@@ -449,7 +463,7 @@ def _entry_delta(entry: dict[str, Any], inherited: dict[str, Any], kind: str) ->
     theirs = model.model_validate(inherited).model_dump()
     delta: dict[str, Any] = {}
     if kind == "artifact_configurations":
-        sources = ("shared", "file", "xml")
+        sources = ("file", "xml")
         if any(mine[s] != theirs[s] for s in sources):
             delta.update({s: mine[s] for s in sources if mine[s] is not None})
         for f in ("name", "description", "active"):

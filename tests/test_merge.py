@@ -34,17 +34,17 @@ def test_null_removes_nested_field() -> None:
 
 
 def test_artifact_configuration_sources_replace_as_group() -> None:
-    profile = {"artifact_configurations": {"default": {"name": "Default", "shared": "jar"}}}
-    project = {"artifact_configurations": {"default": {"file": "custom.xml"}}}
+    profile = {"artifact_configurations": {"default": {"name": "Default", "file": "jar.xml"}}}
+    project = {"artifact_configurations": {"default": {"xml": "<x/>"}}}
     merged = merge_profile(profile, project)
-    assert merged["artifact_configurations"]["default"] == {"name": "Default", "file": "custom.xml"}
+    assert merged["artifact_configurations"]["default"] == {"name": "Default", "xml": "<x/>"}
 
 
 def test_artifact_configuration_override_without_source_keeps_inherited_source() -> None:
-    profile = {"artifact_configurations": {"default": {"name": "Default", "shared": "jar"}}}
+    profile = {"artifact_configurations": {"default": {"name": "Default", "file": "jar.xml"}}}
     project = {"artifact_configurations": {"default": {"name": "Renamed"}}}
     merged = merge_profile(profile, project)
-    assert merged["artifact_configurations"]["default"] == {"name": "Renamed", "shared": "jar"}
+    assert merged["artifact_configurations"]["default"] == {"name": "Renamed", "file": "jar.xml"}
 
 
 def test_profile_key_is_dropped_and_inputs_untouched() -> None:

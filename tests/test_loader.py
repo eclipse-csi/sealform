@@ -24,7 +24,7 @@ def test_minimal_project_inherits_profile(make_config: ConfigFactory) -> None:
     assert project.slug == "tech.alpha"
     assert project.trusted_build_systems == ["GitHub.com"]
     assert project.default_artifact_configuration == "default"
-    assert project.artifact_configurations["default"].source == "shared:jar"
+    assert project.artifact_configurations["default"].source == "file:artifact-configurations/jar.xml"
     release = project.signing_policies["release-signing"]
     assert release.certificate == "release-cert"
     assert release.submitters == [Principal("ci", "alpha-ci")]
@@ -118,10 +118,13 @@ def test_unknown_key(make_config: ConfigFactory) -> None:
             "2 approvals required but only 1 approvers",
         ),
         (
-            "artifact_configurations:\n  other: {shared: jar}\n",
+            "artifact_configurations:\n  other: {file: artifact-configurations/jar.xml}\n",
             "'default_artifact_configuration' is required",
         ),
-        ("artifact_configurations:\n  default: {shared: nope}\n", "no shared artifact configuration 'nope'"),
+        (
+            "artifact_configurations:\n  default: {file: nope.xml}\n",
+            "file not found inside the configuration root: nope.xml",
+        ),
         ("artifact_configurations:\n  default: {file: ../escape.xml}\n", "file not found inside"),
         (
             "signing_policies:\n  release-signing:\n    submitters: ['ci:alpha-ci']\n",
@@ -207,7 +210,7 @@ def test_explicit_no_profile(make_config: ConfigFactory) -> None:
     name: Alpha
     profile: null
     artifact_configurations:
-      only: {shared: jar}
+      only: {file: artifact-configurations/jar.xml}
     ci_users:
       alpha-ci: {signing_policies: [s]}
     signing_policies:
@@ -363,7 +366,7 @@ def test_ci_reference_must_be_owned_or_unmanaged(make_config: ConfigFactory) -> 
 def test_nulls_remove_inherited_values_anywhere(make_config: ConfigFactory) -> None:
     profile = (
         "trusted_build_systems: [GitHub.com]\n"
-        "artifact_configurations:\n  default: {shared: jar}\n"
+        "artifact_configurations:\n  default: {file: artifact-configurations/jar.xml}\n"
         "signing_policies:\n"
         "  release-signing:\n"
         "    certificate: release-cert\n"
@@ -387,3 +390,25 @@ def test_nulls_remove_inherited_values_anywhere(make_config: ConfigFactory) -> N
     assert policy.origin_verification is None
     assert policy.pipeline_policies == {"other": "log"}
     assert policy.trusted_build_system_verification
+
+
+def test_shared_key_explains_the_replacement(make_config: ConfigFactory) -> None:
+    extra = "artifact_configurations:\n  default: {shared: jar}\n"
+    root = make_config({"projects/tech.alpha.yaml": project_yaml(extra=extra)})
+    _, diags = load_config(root)
+    assert any("write 'file: artifact-configurations/jar.xml'" in m for m in _messages(diags)), _messages(
+        diags
+    )
+
+
+def test_invalid_xml_file_is_reported_once(make_config: ConfigFactory) -> None:
+    root = make_config(
+        {
+            "projects/tech.alpha.yaml": project_yaml(),
+            "projects/tech.beta.yaml": project_yaml(name="Beta", ci="beta-ci"),
+        },
+        library={"jar": "<artifact-configuration"},
+    )
+    _, diags = load_config(root)
+    xml_errors = [d for d in diags.errors if d.location and d.location.file.name == "jar.xml"]
+    assert len(xml_errors) == 1

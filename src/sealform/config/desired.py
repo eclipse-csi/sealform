@@ -37,7 +37,7 @@ class DesiredArtifactConfiguration:
     name: str
     description: str | None
     xml: str
-    source: str  # human readable: "shared:jar-signing", "file:path", "inline"
+    source: str  # human readable: "file:<path>" or "inline"
     active: bool = True
 
 
@@ -130,7 +130,6 @@ class DesiredState:
     projects: dict[str, DesiredProject]  # key: casefolded slug
     pipeline_policies: dict[str, DesiredPipelinePolicy]  # key: casefolded slug
     unmanaged: Unmanaged
-    library: dict[str, str] = field(default_factory=dict)  # shared XML: name -> text
     profiles: dict[str, dict[str, Any]] = field(default_factory=dict)  # raw profile data
 
     def ci_user_owner(self, name: str) -> str | None:

@@ -122,12 +122,22 @@ class OrganizationSpec(_Strict):
 class ArtifactConfigurationSpec(_Strict):
     name: Name | None = Field(default=None, description="Display name; defaults to the slug.")
     description: Description | None = None
-    shared: Annotated[str, StringConstraints(pattern=SLUG_RE.pattern)] | None = Field(
-        default=None, description="Name of a file in artifact-configurations/ (without .xml)."
+    file: str | None = Field(
+        default=None,
+        description="XML file path relative to the configuration root, e.g. artifact-configurations/jar.xml.",
     )
-    file: str | None = Field(default=None, description="XML file path relative to the configuration root.")
     xml: str | None = Field(default=None, description="Inline artifact configuration XML.")
     active: bool = True
+
+    @model_validator(mode="before")
+    @classmethod
+    def _no_shared(cls, data: Any) -> Any:
+        if isinstance(data, dict) and "shared" in data:
+            name = data["shared"]
+            raise ValueError(
+                f"'shared' was replaced by 'file': write 'file: artifact-configurations/{name}.xml'"
+            )
+        return data
 
 
 class ApprovalSpec(_Strict):
