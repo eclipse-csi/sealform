@@ -41,7 +41,7 @@ Not yet done:
 
 * End-to-end tests against a dedicated sandbox in CI. They need their own CI
   secret; the developer's sandbox token must never be used in tests.
-* A first release (PyPI trusted publishing and the GHCR image must be set up).
+* A first release (PyPI trusted publishing must be set up).
 * Confirming that a Global Reader token is enough for `plan`.
 
 ## 1. Decisions made
@@ -418,7 +418,8 @@ Commands:
     methods cover the ~40 endpoints used.
   * `scripts/update-spec.sh` refreshes both files, and a scheduled CI job flags
     upstream spec changes.
-* Distribution: PyPI and a container image (`ghcr.io/eclipse-csi/signpath-manager`).
+* Distribution: PyPI only; `uv tool run signpath-manager` (or `uvx`) runs it anywhere uv is available.
+  A container image was built at first and dropped: it added maintenance without a consumer needing it.
 
 ```text
 src/signpath_manager/
@@ -465,7 +466,7 @@ docs/
 6. **M5, hardening and release:** `--prune` with its guards, `ci-user rotate-token`,
    docs (config reference generated from the schema), a sample GitHub workflow for a
    config repo (PR runs `validate` + `plan` with a reader token, merge runs `apply`),
-   PyPI and container release.
+   PyPI release.
 
 M2 → M4 → M3 is an equally valid order if we want to adopt the existing org before
 writing anything to it.

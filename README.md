@@ -12,8 +12,8 @@ Organization configurations (for example the Eclipse Foundation one) live in the
 ## Install
 
 ```console
-pipx install signpath-manager          # or: uv tool install signpath-manager
-docker run --rm -v "$PWD:/config" -e SIGNPATH_API_TOKEN ghcr.io/eclipse-csi/signpath-manager plan
+uv tool run signpath-manager --help     # or uvx; uv fetches a suitable Python if needed
+uv tool install signpath-manager       # or pipx install signpath-manager
 ```
 
 ## Quick start

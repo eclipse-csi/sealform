@@ -31,7 +31,7 @@ Chosen option: "Python", because it matches the team's existing stack (otterdog)
 
 * Good, because maintainers can reuse otterdog practices and libraries (pydantic, ruamel.yaml, rich, click).
 * Good, because the configuration schema, validation messages and JSON Schema come from one set of model classes.
-* Bad, because distribution needs a Python runtime (mitigated by publishing to PyPI and as a container image).
+* Bad, because distribution needs a Python runtime (mitigated by publishing to PyPI: `uv tool run signpath-manager` fetches a suitable Python and runs the tool anywhere uv is available).
 
 ### Confirmation
 
