@@ -13,6 +13,8 @@ sealform is an independent project: it is not affiliated with, endorsed by, or m
 
 ## Install
 
+sealform is published on PyPI: <https://pypi.org/project/sealform/>.
+
 ```console
 uv tool run sealform --help     # or uvx; uv fetches a suitable Python if needed
 uv tool install sealform       # or pipx install sealform
@@ -115,7 +117,7 @@ scripts/update-spec.sh   # refresh the vendored OpenAPI document and XSD
 The version comes from git tags ([uv-dynamic-versioning](https://github.com/ninoseki/uv-dynamic-versioning)):
 a commit tagged `vX.Y.Z` builds as `X.Y.Z`, any other commit as the next minor `.devN` pre-release.
 To release, tag the commit on `main` and push the tag; the release workflow builds, checks that the
-built version matches the tag, and publishes to PyPI.
+built version matches the tag, and publishes to [PyPI](https://pypi.org/project/sealform/).
 
 ```console
 git tag -s vX.Y.Z -m "vX.Y.Z"

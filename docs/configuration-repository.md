@@ -71,7 +71,7 @@ jobs:
           SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_ADMIN_TOKEN }}
 ```
 
-Pin `sealform` to a version (`uvx sealform@X.Y.Z`) once releases are published.
+Pin `sealform` to a released version (`uvx sealform@X.Y.Z`); releases are listed on [PyPI](https://pypi.org/project/sealform/).
 `--prune` is best kept to deliberate, manual runs.
 
 ## Bootstrapping from an existing organization

@@ -39,11 +39,12 @@ Changes made to the plan during implementation:
 * **`null` removes an inherited value at any depth;** the pre-merge structural
   check ignores nulls.
 
+Released: 0.1.0 is published on PyPI (<https://pypi.org/project/sealform/>).
+
 Not yet done:
 
 * End-to-end tests against a dedicated sandbox in CI. They need their own CI
   secret; the developer's sandbox token must never be used in tests.
-* A first release (PyPI trusted publishing must be set up).
 * Confirming that a Global Reader token is enough for `plan`.
 
 ## 1. Decisions made
