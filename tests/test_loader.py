@@ -123,9 +123,12 @@ def test_unknown_key(make_config: ConfigFactory) -> None:
         ),
         (
             "artifact_configurations:\n  default: {file: nope.xml}\n",
-            "file not found inside the configuration root: nope.xml",
+            "file does not exist: nope.xml",
         ),
-        ("artifact_configurations:\n  default: {file: ../escape.xml}\n", "file not found inside"),
+        (
+            "artifact_configurations:\n  default: {file: ../escape.xml}\n",
+            "path is outside the configuration root",
+        ),
         (
             "signing_policies:\n  release-signing:\n    submitters: ['ci:alpha-ci']\n",
             "belongs to this project",
@@ -467,7 +470,7 @@ def test_policy_template_errors(make_config: ConfigFactory) -> None:
         profile=profile,
     )
     _, diags = load_config(root)
-    missing = [d for d in diags.errors if "template not found" in d.message]
+    missing = [d for d in diags.errors if "file does not exist" in d.message]
     assert len(missing) == 1  # one reference in the profile, reported once for both projects
     assert missing[0].location is not None
     assert missing[0].location.file.name == "standard.yaml"
@@ -483,3 +486,32 @@ def test_policy_template_errors(make_config: ConfigFactory) -> None:
     messages = _messages(diags)
     assert any("cannot extend another template" in m and "nested.yaml" in m for m in messages), messages
     assert any("typo.yaml" in m and "certificate_slug: unknown key" in m for m in messages), messages
+
+
+def test_unusable_template_is_reported_once_without_follow_up_errors(make_config: ConfigFactory) -> None:
+    extra = "signing_policies:\n  release-signing: {extends: signing-policies/missing.yaml, name: Release}\n"
+    profile = DEFAULT_PROFILE.split("  release-signing:")[0]  # the profile no longer defines release-signing
+    root = make_config({"projects/tech.alpha.yaml": project_yaml(extra=extra)}, profile=profile)
+    _, diags = load_config(root)
+    assert [d.message for d in diags.errors] == ["file does not exist: signing-policies/missing.yaml"]
+
+
+def test_file_reference_problems(make_config: ConfigFactory) -> None:
+    org = (
+        "organization_id: 11111111-2222-3333-4444-555555555555\n"
+        "default_profile: standard\n"
+        "pipeline_policies:\n  gh: {name: GH, definition_file: pipeline-policies/missing.yml}\n"
+    )
+    extra = "signing_policies:\n  release-signing: {extends: signing-policies}\n"
+    root = make_config(
+        {
+            "projects/tech.alpha.yaml": project_yaml(extra=extra),
+            "signing-policies/release.yaml": "certificate: c\n",
+        },
+        org=org,
+    )
+    errors = {d.path: d.message for d in load_config(root)[1].errors}
+    assert (
+        errors["pipeline_policies.gh.definition_file"] == "file does not exist: pipeline-policies/missing.yml"
+    )
+    assert errors["signing_policies.release-signing.extends"] == "not a file: signing-policies"

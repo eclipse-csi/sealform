@@ -74,13 +74,18 @@ def _validate_model[M: BaseModel](
         return None
 
 
-def _within_root(root: Path, relative: str) -> Path | None:
+def resolve_file(root: Path, relative: str) -> tuple[Path | None, str | None]:
+    """Resolve a file reference (`file:`, `extends:`, `definition_file:`); return (path, problem)."""
     candidate = (root / relative).resolve()
     try:
         candidate.relative_to(root.resolve())
     except ValueError:
-        return None
-    return candidate
+        return None, f"path is outside the configuration root: {relative}"
+    if not candidate.exists():
+        return None, f"file does not exist: {relative}"
+    if not candidate.is_file():
+        return None, f"not a file: {relative}"
+    return candidate, None
 
 
 class XmlFiles:
@@ -91,11 +96,11 @@ class XmlFiles:
         self.diags = diags
         self._texts: dict[Path, str | None] = {}
 
-    def get(self, relative: str) -> tuple[Path | None, str | None]:
-        """Return (path, text); path is None when the file is missing or outside the root."""
-        path = _within_root(self.root, relative)
-        if path is None or not path.is_file():
-            return None, None
+    def get(self, relative: str) -> tuple[str | None, str | None]:
+        """Return (text, problem with the reference); text is None when unusable."""
+        path, problem = resolve_file(self.root, relative)
+        if path is None:
+            return None, problem
         if path not in self._texts:
             try:
                 text: str | None = path.read_text(encoding="utf-8-sig")
@@ -106,7 +111,7 @@ class XmlFiles:
                 for problem in validate_xml(text):
                     self.diags.error(problem, Location(path))
             self._texts[path] = text
-        return path, self._texts[path]
+        return self._texts[path], None
 
 
 class PolicyTemplates:
@@ -120,9 +125,9 @@ class PolicyTemplates:
 
     def get(self, relative: str) -> tuple[dict[str, Any] | None, str | None]:
         """Return (content, problem with the reference)."""
-        path = _within_root(self.root, relative)
-        if path is None or not path.is_file():
-            return None, f"signing policy template not found inside the configuration root: {relative}"
+        path, problem = resolve_file(self.root, relative)
+        if path is None:
+            return None, problem
         if path not in self._cache:
             self._cache[path] = self._load(path)
         return self._cache[path], None
@@ -145,9 +150,15 @@ class PolicyTemplates:
         data: dict[str, Any] = drop_nulls(doc.data or {})
         return data
 
-    def loader(self, project_doc: YamlDocument, profile_doc: YamlDocument | None) -> TemplateLoader:
+    def loader(
+        self, project_doc: YamlDocument, profile_doc: YamlDocument | None, failed: set[str]
+    ) -> TemplateLoader:
+        """Template loader for one project; policies whose template is unusable go to ``failed``."""
+
         def load(relative: str, layer: str, policy: str) -> dict[str, Any] | None:
             content, problem = self.get(relative)
+            if content is None:
+                failed.add(policy.casefold())
             if problem is not None:
                 doc = profile_doc if layer == "profile" and profile_doc is not None else project_doc
                 path = ("signing_policies", policy, "extends")
@@ -176,9 +187,13 @@ def _load_pipeline_policies(
             data = spec.definition
             text = dump_yaml(spec.definition)
         elif spec.definition_file is not None:
-            path = _within_root(root, spec.definition_file)
-            if path is None or not path.is_file():
-                diags.error(f"definition file not found: {spec.definition_file}", loc)
+            path, problem = resolve_file(root, spec.definition_file)
+            if path is None:
+                diags.error(
+                    problem or "unusable file",
+                    doc.locate(("pipeline_policies", slug, "definition_file")),
+                    f"pipeline_policies.{slug}.definition_file",
+                )
                 continue
             text = path.read_text(encoding="utf-8-sig")
             try:
@@ -211,12 +226,15 @@ class _ProjectBuilder:
         profile_doc: YamlDocument | None,
         xml_files: XmlFiles,
         diags: Diagnostics,
+        failed_templates: set[str] | None = None,
     ) -> None:
         self.root = root
         self.doc = doc
         self.profile_doc = profile_doc
         self.xml_files = xml_files
         self.diags = diags
+        # signing policies (casefolded) whose template could not be used: already reported
+        self.failed_templates = failed_templates or set()
 
     def loc(self, *path: str | int) -> Location:
         """Locate a path in the project file, falling back to the profile file."""
@@ -266,16 +284,11 @@ class _ProjectBuilder:
             source = ""
             if ac.file is not None:
                 source = f"file:{ac.file}"
-                path, xml_text = self.xml_files.get(ac.file)
-                if path is None:
-                    self.error(
-                        f"file not found inside the configuration root: {ac.file}",
-                        "artifact_configurations",
-                        ac_slug,
-                        "file",
-                    )
+                xml_text, problem = self.xml_files.get(ac.file)
+                if problem is not None:
+                    self.error(problem, "artifact_configurations", ac_slug, "file")
                     continue
-                if xml_text is None:
+                if xml_text is None:  # unreadable or invalid: reported at the file itself
                     continue
             else:
                 source = "inline"
@@ -333,8 +346,9 @@ class _ProjectBuilder:
         # signing policies
         tbs = list(spec.trusted_build_systems or [])
         policies: dict[str, DesiredSigningPolicy] = {}
+        declared_policies = {k.casefold() for k, v in (spec.signing_policies or {}).items() if v is not None}
         for sp_slug, sp in (spec.signing_policies or {}).items():
-            if sp is None:
+            if sp is None or sp_slug.casefold() in self.failed_templates:
                 continue
             key = sp_slug.casefold()
             sp_path: tuple[str, ...] = ("signing_policies", sp_slug)
@@ -424,7 +438,7 @@ class _ProjectBuilder:
 
         for dci in ci_users.values():
             for i, p in enumerate(dci.signing_policies):
-                if p.casefold() not in policies:
+                if p.casefold() not in declared_policies:
                     self.error(f"unknown signing policy '{p}'", "ci_users", dci.name, "signing_policies", i)
 
         if len(self.diags.errors) > errors_before:
@@ -548,13 +562,16 @@ def load_config(
             if profile_doc is None:
                 diags.error(f"unknown profile '{profile_name}'", doc.locate(("profile",)))
                 continue
+        failed_templates: set[str] = set()
         merged = merge_profile(
-            profile_doc.data if profile_doc else None, data, templates=templates.loader(doc, profile_doc)
+            profile_doc.data if profile_doc else None,
+            data,
+            templates=templates.loader(doc, profile_doc, failed_templates),
         )
         spec = _validate_model(ProjectSpec, doc, diags, data=merged)
         if spec is None:
             continue
-        builder = _ProjectBuilder(root, doc, profile_doc, xml_files, diags)
+        builder = _ProjectBuilder(root, doc, profile_doc, xml_files, diags, failed_templates)
         project = builder.build(slug, spec, profile_name)
         if project is None:
             continue
