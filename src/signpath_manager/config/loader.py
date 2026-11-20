@@ -308,6 +308,12 @@ class _ProjectBuilder:
                     *sp_path,
                     "origin_verification",
                 )
+            if sp.pipeline_policies and not sp.trusted_build_system_verification:
+                self.error(
+                    "pipeline policies require 'trusted_build_system_verification: true'",
+                    *sp_path,
+                    "pipeline_policies",
+                )
             if sp.trusted_build_system_verification and not tbs:
                 self.error(
                     "trusted build system verification requires at least one entry in "

@@ -13,11 +13,13 @@ from typing import Any, NoReturn
 import click
 import httpx
 from rich.console import Console
+from rich.markup import escape
 
 from signpath_manager import __version__
 from signpath_manager.api.client import SignPathClient
 from signpath_manager.api.errors import ApiError, TransportError
 from signpath_manager.api.http import HttpSession
+from signpath_manager.apply.executor import Executor, Outcome
 from signpath_manager.auth import TokenError, resolve_token
 from signpath_manager.config.desired import DesiredState
 from signpath_manager.config.loader import load_config
@@ -28,6 +30,7 @@ from signpath_manager.live.state import Scope
 from signpath_manager.plan.actions import Plan
 from signpath_manager.plan.diff import build_plan
 from signpath_manager.plan.render import render_plan
+from signpath_manager.tokens.sinks import DiscardSink, FileSink, TokenSink, TokenSinkError, TtySink
 
 # Tests replace this to talk to an in-memory fake of the SignPath API.
 TransportFactory = Callable[[], httpx.BaseTransport | None]
@@ -275,6 +278,121 @@ def plan(
         sys.exit(1)
     if detailed_exitcode and result.has_changes:
         sys.exit(2)
+
+
+def is_interactive() -> bool:
+    return sys.stdin.isatty() and sys.stdout.isatty()
+
+
+def choose_sink(ci_token_file: Path | None, discard: bool, *, needed: bool) -> TokenSink | None:
+    if ci_token_file is not None and discard:
+        raise click.UsageError("--ci-token-file and --discard-new-ci-tokens are mutually exclusive")
+    if not needed:
+        return None
+    try:
+        if ci_token_file is not None:
+            return FileSink(ci_token_file)
+        if discard:
+            return DiscardSink()
+        if is_interactive():
+            return TtySink()
+    except TokenSinkError as e:
+        fail(str(e))
+    fail(
+        "the plan issues new CI user API tokens but there is no terminal to show them: "
+        "pass --ci-token-file PATH, or --discard-new-ci-tokens and rotate them later"
+    )
+
+
+def render_outcome(outcome: Outcome, console: Console) -> None:
+    a = outcome.action
+    where = f"project {a.project}: " if a.project else ""
+    label = escape(f"{where}{a.op.value} {a.target}")
+    if outcome.ok:
+        console.print(f"  [green]done[/green]    {label}")
+    elif outcome.skipped:
+        console.print(f"  [yellow]skipped[/yellow] {label}: {escape(outcome.error or '')}")
+    else:
+        console.print(f"  [red]failed[/red]  {label}: {escape(outcome.error or '')}")
+
+
+@cli.command()
+@scope_options
+@click.option(
+    "-y", "--yes", is_flag=True, help="Do not ask for confirmation (required when not interactive)."
+)
+@click.option(
+    "--ci-token-file",
+    type=click.Path(dir_okay=False, path_type=Path),
+    help="Append new CI user API tokens to this file (created with mode 0600).",
+)
+@click.option(
+    "--discard-new-ci-tokens",
+    is_flag=True,
+    help="Do not keep new CI user tokens; recover them later with 'ci-user rotate-token'.",
+)
+@click.pass_obj
+@api_errors
+def apply(
+    settings: Settings,
+    projects: tuple[str, ...],
+    org_only: bool,
+    prune: bool,
+    max_deactivations: int,
+    yes: bool,
+    ci_token_file: Path | None,
+    discard_new_ci_tokens: bool,
+) -> None:
+    """Apply the configuration to SignPath."""
+    scope = scope_for(projects, org_only)
+    desired = load_desired(settings, projects if scope == "projects" else None)
+    client = make_client(settings, desired.api_url, desired.organization_id)
+    out = _stdout()
+    try:
+        result = compute_plan(
+            settings, desired, client, scope, prune=prune, max_deactivations=max_deactivations
+        )
+        render_plan(result, out)
+        if result.diagnostics.has_errors:
+            sys.exit(1)
+        if not result.has_changes:
+            return
+        sink = choose_sink(
+            ci_token_file,
+            discard_new_ci_tokens,
+            needed=any(a.issues_token for a in result.actions),
+        )
+        if not yes:
+            if not is_interactive():
+                fail("refusing to apply without confirmation: pass --yes")
+            if not click.confirm("\nApply these changes?", default=False):
+                fail("aborted", code=1)
+        if sink is not None:
+            out.print(f"New CI user API tokens go to: {sink.description}")
+        out.print()
+        executor = Executor(
+            client,
+            result,
+            sink,
+            on_outcome=lambda o: render_outcome(o, out),
+            parallelism=settings.parallelism,
+        )
+        outcome = executor.run()
+    finally:
+        client.close()
+    out.print()
+    out.print(
+        f"Applied {len(outcome.applied)} change(s), {len(outcome.failed)} failed, "
+        f"{len(outcome.skipped)} skipped."
+    )
+    if isinstance(sink, DiscardSink) and sink.discarded:
+        out.print(
+            "[yellow]Discarded the API tokens of new CI users: "
+            + ", ".join(sink.discarded)
+            + ". Use 'signpath-manager ci-user rotate-token NAME' to obtain usable tokens.[/yellow]"
+        )
+    if not outcome.success:
+        sys.exit(1)
 
 
 @cli.command()

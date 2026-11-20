@@ -57,3 +57,20 @@ def standard_fake() -> FakeSignPath:
 
 def summary(plan: Plan) -> list[str]:
     return [f"{a.op.value} {a.kind.value} {a.name}" for a in plan.ordered()]
+
+
+def apply_plan(fake: FakeSignPath, plan: Plan, sink: object | None = None):  # type: ignore[no-untyped-def]
+    from signpath_manager.apply.executor import Executor
+    from signpath_manager.tokens.sinks import DiscardSink
+
+    executor = Executor(client_for(fake), plan, sink or DiscardSink(), parallelism=2)  # type: ignore[arg-type]
+    return executor.run()
+
+
+def converge(fake: FakeSignPath, root: Path, **kwargs: object) -> Plan:
+    """Plan, apply, and return the follow-up plan (which should be empty)."""
+    plan = plan_for(fake, root, **kwargs)  # type: ignore[arg-type]
+    assert not plan.diagnostics.has_errors, [str(d) for d in plan.diagnostics.errors]
+    result = apply_plan(fake, plan)
+    assert result.success, [(o.action.target, o.error) for o in result.outcomes if not o.ok]
+    return plan_for(fake, root, **kwargs)  # type: ignore[arg-type]
