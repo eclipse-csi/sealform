@@ -397,6 +397,51 @@ def apply(
         sys.exit(1)
 
 
+@cli.group("ci-user")
+def ci_user() -> None:
+    """Operations on CI users."""
+
+
+@ci_user.command("rotate-token")
+@click.argument("name")
+@click.option(
+    "--ci-token-file",
+    type=click.Path(dir_okay=False, path_type=Path),
+    help="Append the new token to this file (created with mode 0600) instead of showing it.",
+)
+@click.option("-y", "--yes", is_flag=True, help="Do not ask for confirmation.")
+@click.pass_obj
+@api_errors
+def rotate_token(settings: Settings, name: str, ci_token_file: Path | None, yes: bool) -> None:
+    """Regenerate the API token of CI user NAME (the previous token stops working)."""
+    desired = load_desired(settings, None)
+    sink = choose_sink(ci_token_file, False, needed=True)
+    assert sink is not None
+    client = make_client(settings, desired.api_url, desired.organization_id)
+    try:
+        matches = [u for u in client.ci_users() if u.name.casefold() == name.casefold()]
+        users = [client.ci_user(u.id) for u in matches]
+        active = [u for u in users if u.status != "Inactive"]
+        if not active:
+            fail(f"no active CI user named '{name}'")
+        user = active[0]
+        if user.user_id == client.me().user_id:
+            fail("refusing to rotate the token used by this session")
+        owner = desired.ci_user_owner(user.name)
+        if not yes:
+            if not is_interactive():
+                fail("refusing to rotate without confirmation: pass --yes")
+            if not click.confirm(
+                f"Regenerate the API token of '{user.name}'? The current token stops working."
+            ):
+                fail("aborted")
+        token = client.regenerate_ci_user_token(user.user_id).api_token
+        sink.deliver(owner, user.name, token)
+    finally:
+        client.close()
+    _stderr().print(f"Rotated the API token of '{user.name}'; the new token went to: {sink.description}.")
+
+
 @cli.command("import")
 @click.option(
     "-o",

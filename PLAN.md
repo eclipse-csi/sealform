@@ -9,6 +9,41 @@ reconciled against the SignPath REST API.
   library) lives in a separate repo. The two are never mixed. Examples in this
   repo are generic.
 
+## 0. Status (2026-11-20)
+
+Milestones M0 to M5 are implemented. Every command was exercised against the
+sandbox organization: `plan`, `apply` (create and update), `import` with and
+without a profile followed by a `plan` showing no change, and
+`ci-user rotate-token` (through the test suite). User documentation is in the
+[README](README.md), [docs/configuration.md](docs/configuration.md) and
+[docs/configuration-repository.md](docs/configuration-repository.md).
+
+Changes made to the plan during implementation:
+
+- **API models are hand-written and lenient** rather than generated, because real
+  responses deviate from the spec
+  ([ADR-0010](docs/decisions/0010-hand-write-lenient-api-models.md)).
+- **XML is compared as text,** not canonicalized, because SignPath stores it
+  verbatim. The one transformation SignPath applies (prepending an XML
+  declaration when there is none) is mirrored.
+- **Preconditions are verified once, right before the first write,** rather than
+  before each write. Otherwise the tool's own earlier writes would trip them.
+  A stale project is skipped while the others are applied.
+- **`ci:<name>` submitter references must be resolvable offline:** the CI user is
+  declared by another project or listed in `unmanaged.ci_users`. This is so
+  `--prune` can never deactivate a CI user that a policy still uses.
+- **Pipeline policies require trusted build system verification,** because the API
+  nests them inside that setting.
+- **`null` removes an inherited value at any depth;** the pre-merge structural
+  check ignores nulls.
+
+Not yet done:
+
+- End-to-end tests against a dedicated sandbox in CI. They need their own CI
+  secret; the developer's sandbox token must never be used in tests.
+- A first release (PyPI trusted publishing and the GHCR image must be set up).
+- Confirming that a Global Reader token is enough for `plan`.
+
 ## 1. Decisions made
 
 Each structural decision has an ADR in [docs/decisions](docs/decisions/README.md).

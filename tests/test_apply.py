@@ -340,3 +340,40 @@ def test_cli_apply_refuses_on_plan_errors(cli_fake: FakeSignPath, make_config: C
     result = CliRunner().invoke(cli, ["-c", str(root), "apply", "--yes", "--discard-new-ci-tokens"])
     assert result.exit_code == 1
     assert cli_fake.writes() == []
+
+
+def test_cli_rotate_token(cli_fake: FakeSignPath, make_config: ConfigFactory, tmp_path: Path) -> None:
+    root = make_config({"projects/tech.alpha.yaml": project_yaml()})
+    CliRunner().invoke(cli, ["-c", str(root), "apply", "--yes", "--discard-new-ci-tokens"])
+    ci = next(u for u in cli_fake.ci_users if u.name == "alpha-ci")
+    old = ci.token
+    tokens = tmp_path / "rotated.jsonl"
+    result = CliRunner().invoke(
+        cli, ["-c", str(root), "ci-user", "rotate-token", "ALPHA-CI", "--yes", "--ci-token-file", str(tokens)]
+    )
+    assert result.exit_code == 0, result.output
+    assert ci.token != old
+    assert ci.token not in result.output
+    record = json.loads(tokens.read_text())
+    assert record == {**record, "ci_user": "alpha-ci", "project": "tech.alpha", "token": ci.token}
+
+
+def test_cli_rotate_token_refuses_own_token(
+    cli_fake: FakeSignPath, make_config: ConfigFactory, tmp_path: Path
+) -> None:
+    root = make_config({"projects/tech.alpha.yaml": project_yaml()})
+    result = CliRunner().invoke(
+        cli,
+        [
+            "-c",
+            str(root),
+            "ci-user",
+            "rotate-token",
+            cli_fake.admin.name,
+            "--yes",
+            "--ci-token-file",
+            str(tmp_path / "t"),
+        ],
+    )
+    assert result.exit_code == 1
+    assert "refusing to rotate the token used by this session" in result.output
