@@ -1,0 +1,99 @@
+# git-cliff configuration: renders the notes of the GitHub release created by
+# .github/workflows/release.yml when a tag is pushed.
+#
+#   uvx git-cliff --current --strip all   # notes for the tag at HEAD
+#   uvx git-cliff --unreleased            # what the next release would say
+#
+# Set GITHUB_TOKEN to resolve GitHub usernames and pull requests without hitting
+# the anonymous API rate limit.
+# https://git-cliff.org/docs/configuration
+
+[remote.github]
+owner = "eclipse-csi"
+repo = "sealform"
+
+[changelog]
+# Tera template, rendered once per release. https://keats.github.io/tera/docs/
+body = """
+{%- set repo_url = "https://github.com/" ~ remote.github.owner ~ "/" ~ remote.github.repo -%}
+
+{#- Human contributors to thank, and the ones contributing for the first time. -#}
+{%- set_global thanks = [] -%}
+{%- set_global first_timers = [] -%}
+{%- if github -%}
+  {%- for contributor in github.contributors -%}
+    {%- if contributor.username and contributor.username is not ending_with("[bot]") -%}
+      {%- set_global thanks = thanks | concat(with=contributor.username) -%}
+      {%- if contributor.is_first_time -%}
+        {%- set_global first_timers = first_timers | concat(with=contributor) -%}
+      {%- endif -%}
+    {%- endif -%}
+  {%- endfor -%}
+{%- endif -%}
+
+{%- set breaking = commits | filter(attribute="breaking", value=true) -%}
+{%- if breaking | length > 0 -%}
+## ⚠️ Breaking changes
+{% for commit in breaking %}
+- {% if commit.scope %}**{{ commit.scope }}:** {% endif %}{{ commit.message | split(pat="\n") | first | trim | upper_first }}
+  {%- if commit.breaking_description and commit.breaking_description != commit.message %}: \
+    {{ commit.breaking_description | trim | replace(from="\n", to=" ") | replace(from="  ", to=" ") }}
+  {%- endif %}
+{%- endfor %}
+
+{% endif -%}
+## What's changed
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | striptags | trim }}
+{% for commit in commits %}
+- {% if commit.scope %}**{{ commit.scope }}:** {% endif %}{{ commit.message | split(pat="\n") | first | trim | upper_first }}
+  {%- if commit.remote.pr_author %} by @{{ commit.remote.pr_author }}
+  {%- elif commit.remote.username %} by @{{ commit.remote.username }}
+  {%- endif %}
+  {%- if commit.remote.pr_number %} in #{{ commit.remote.pr_number }}{% endif %}
+{%- endfor %}
+{% endfor %}
+
+{%- if thanks | length > 0 %}
+## Contributors
+
+Thank you to everyone who contributed to this release: \
+{% for username in thanks | unique | sort %}@{{ username }}{% if not loop.last %}, {% endif %}{% endfor %}.
+{% if first_timers | length > 0 %}
+A special welcome to our new contributors:
+{% for contributor in first_timers %}
+- @{{ contributor.username }} made their first contribution\
+  {%- if contributor.pr_number %} in #{{ contributor.pr_number }}{% endif %}
+{%- endfor %}
+{% endif %}
+{%- endif %}
+
+{%- if previous.version %}
+**Full changelog**: {{ repo_url }}/compare/{{ previous.version }}...{{ version }}
+{%- endif %}
+"""
+trim = true
+
+[git]
+conventional_commits = true
+# Keep the commits that predate Conventional Commits; they land in "Other changes".
+filter_unconventional = false
+# Breaking changes are always listed, whatever their type.
+protect_breaking_commits = true
+# Release tags only (v0.3.0, v1.0.0rc1, ...).
+tag_pattern = "^v[0-9]"
+sort_commits = "oldest"
+# GitHub appends " (#123)" to squash-merged commits; the template links the
+# pull request itself.
+commit_preprocessors = [{ pattern = '\s*\(#[0-9]+\)', replace = "" }]
+# Groups are rendered in the order of their hidden <!-- n --> prefix.
+commit_parsers = [
+  { message = "^feat", group = "<!-- 0 -->Features" },
+  { message = "^fix", group = "<!-- 1 -->Bug fixes" },
+  { message = "^perf", group = "<!-- 2 -->Performance" },
+  { message = "^docs", group = "<!-- 3 -->Documentation" },
+  { message = "^refactor", group = "<!-- 4 -->Refactoring" },
+  { message = "^test", group = "<!-- 5 -->Tests" },
+  { message = "^(build|ci)", group = "<!-- 6 -->Build and CI" },
+  { message = ".*", group = "<!-- 7 -->Other changes" },
+]
