@@ -41,7 +41,7 @@ jobs:
             dist/*.tar.gz
       # PEP 740 attestations (dist/<file>.publish.attestation), uploaded by uv publish and shown
       # as the provenance of each file on PyPI
-      - run: uvx pypi-attestations@0.0.31 sign dist/*.whl dist/*.tar.gz
+      - run: uvx --no-build pypi-attestations@0.0.31 sign dist/*.whl dist/*.tar.gz
       - run: uv publish --trusted-publishing always
       # the exact files published to PyPI, with their PEP 740 attestations, are attached to the
       # GitHub release
@@ -72,7 +72,7 @@ jobs:
           path: dist/
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
       - name: Generate the release notes (cliff.toml)
-        run: uvx git-cliff@2.14.2 --current --strip all --output "$RUNNER_TEMP/notes.md"
+        run: uvx --no-build git-cliff@2.14.2 --current --strip all --output "$RUNNER_TEMP/notes.md"
         env:
           # resolves commit authors to GitHub users and their pull requests
           GITHUB_TOKEN: ${{ github.token }}
