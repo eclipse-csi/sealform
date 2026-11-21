@@ -20,6 +20,17 @@ uv tool run sealform --help     # or uvx; uv fetches a suitable Python if needed
 uv tool install sealform       # or pipx install sealform
 ```
 
+Each release is built and published by the [release workflow](.github/workflows/release.yml), which
+attests the provenance of the wheel and the source distribution. They can be checked against this
+repository with the PyPI ([PEP 740](https://peps.python.org/pep-0740/)) attestations, or with the
+GitHub artifact attestations for the files attached to the GitHub release:
+
+```console
+uvx pypi-attestations verify pypi --repository https://github.com/eclipse-csi/sealform \
+  pypi:sealform-X.Y.Z-py3-none-any.whl
+gh attestation verify sealform-X.Y.Z-py3-none-any.whl --repo eclipse-csi/sealform
+```
+
 ## Quick start
 
 ```console
