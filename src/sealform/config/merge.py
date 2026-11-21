@@ -53,6 +53,31 @@ def _without_extends(entry: Any) -> Any:
     return entry
 
 
+def _policy_template(name: str, lower: Any, upper: Any, templates: TemplateLoader | None) -> dict[str, Any]:
+    """The template a policy starts from: the project entry's ``extends`` when it has one (even
+    ``null``, which drops the profile's template), otherwise that of the profile entry."""
+    if templates is None:
+        return {}
+    if isinstance(upper, dict) and EXTENDS in upper:
+        extends, where = upper[EXTENDS], "project"
+    elif isinstance(lower, dict):
+        extends, where = lower.get(EXTENDS), "profile"
+    else:
+        return {}
+    if extends is None:
+        return {}
+    return templates(extends, where, name) or {}
+
+
+def _merge_policy(name: str, lower: Any, upper: Any, templates: TemplateLoader | None) -> Any:
+    """Layer one policy: its template, then the profile entry, then the project entry."""
+    entry: Any = _policy_template(name, lower, upper, templates)
+    for layer in (lower, upper):
+        if isinstance(layer, dict):
+            entry = _merge(entry, _without_extends(layer), ("signing_policies", name))
+    return entry
+
+
 def _merge_policies(
     inherited: dict[str, Any] | None, own: Any, templates: TemplateLoader | None
 ) -> dict[str, Any] | None:
@@ -65,20 +90,7 @@ def _merge_policies(
         upper = own.get(name, _MISSING)
         if upper is None:  # `<policy>: null` removes the inherited policy
             continue
-        lower = inherited.get(name)
-        if isinstance(upper, dict) and EXTENDS in upper:
-            extends, where = upper[EXTENDS], "project"
-        else:
-            extends = lower.get(EXTENDS) if isinstance(lower, dict) else None
-            where = "profile"
-        entry: Any = {}
-        if extends is not None and templates is not None:
-            entry = templates(extends, where, name) or {}
-        if isinstance(lower, dict):
-            entry = _merge(entry, _without_extends(lower), ("signing_policies", name))
-        if isinstance(upper, dict):
-            entry = _merge(entry, _without_extends(upper), ("signing_policies", name))
-        result[name] = entry
+        result[name] = _merge_policy(name, inherited.get(name), upper, templates)
     return result
 
 
